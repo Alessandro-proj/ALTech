@@ -1,0 +1,19 @@
+{
+  "name": "AL Tech",
+  "short_name": "AL Tech",
+  "description": "Estúdio premium de desenvolvimento digital da AL Tech.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#050505",
+  "theme_color": "#050505",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
