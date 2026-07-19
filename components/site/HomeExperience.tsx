@@ -63,6 +63,29 @@ type ChatMessage = {
   text: string;
 };
 
+type SystemShowcaseItem = {
+  title: string;
+  category: string;
+  description: string;
+  result: string;
+  image?: string;
+};
+
+type ProjectItem = {
+  title: string;
+  tag: string;
+  description: string;
+  problem: string;
+  solution: string;
+  impact: string;
+  metric: string;
+  stack: string[];
+  results: string[];
+  accent: string;
+  href: string;
+  image?: string;
+};
+
 const WHATSAPP_NUMBER = "5521972714119";
 const WHATSAPP_DISPLAY = "+55 21 97271-4119";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
@@ -142,7 +165,7 @@ const services: Service[] = [
   },
 ];
 
-const systemShowcase = [
+const systemShowcase: SystemShowcaseItem[] = [
   {
     title: "CMIPcD",
     category: "Sistema governamental",
@@ -170,7 +193,7 @@ const systemShowcase = [
     image: "/projects/barbearia-ravier.png",
     result: "Experiência premium e fluxo claro até o contato.",
   },
-] as const;
+];
 
 const outcomeCards = [
   ["Mais produtividade", "Sistemas que reduzem tarefas repetitivas e deixam a equipe focar no que importa."],
@@ -285,7 +308,7 @@ const techs = [
   ["Tailwind", "TW", "UI consistente"],
 ] as const;
 
-const projects = [
+const projects: ProjectItem[] = [
   {
     title: "CMIPcD",
     tag: "Governo digital",
@@ -1561,8 +1584,8 @@ export function HomeExperience() {
       "@context": "https://schema.org",
       "@type": "Organization",
       name: "AL Tech",
-      url: "https://altech.dev",
-      logo: "https://altech.dev/favicon.svg",
+      url: "https://altechweb.com.br",
+      logo: "https://altechweb.com.br/favicon.svg",
       description:
         "Desenvolvimento de sistemas web, automações, dashboards, cloud, infraestrutura e consultoria tecnológica.",
       sameAs: ["https://www.instagram.com/altech.dev/"],
@@ -1570,7 +1593,7 @@ export function HomeExperience() {
         "@type": "Person",
         name: "Alessandro Araujo",
         jobTitle: "Fundador e desenvolvedor",
-        image: "https://altech.dev/alessandro-araujo.jpg",
+        image: "https://altechweb.com.br/alessandro-araujo.jpg",
       },
       areaServed: "Brasil",
       makesOffer: services.map((service) => ({

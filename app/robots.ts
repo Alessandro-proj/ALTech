@@ -6,6 +6,6 @@ export default function robots(): MetadataRoute.Robots {
       userAgent: "*",
       allow: "/",
     },
-    sitemap: "https://altech.dev/sitemap.xml",
+    sitemap: "https://altechweb.com.br/sitemap.xml",
   };
 }

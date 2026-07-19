@@ -13,6 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://altechweb.com.br"),
   title: {
     default: "AL Tech | Estúdio de Desenvolvimento Digital",
     template: "%s | AL Tech",

@@ -13,7 +13,7 @@ ao WhatsApp.
 - GSAP
 - Three.js
 - Lucide Icons
-- Vinext
+- Vinext opcional para previews Cloudflare/Codex
 
 ## Desenvolvimento local
 
@@ -38,13 +38,17 @@ npm run build
 
 Use Node.js `>=22.13.0`.
 
-Comandos recomendados para hospedagem:
+Comandos recomendados para Hostinger/Web Apps:
 
 ```bash
 npm ci
 npm run build
 npm run start
 ```
+
+Framework: `Next.js`
+Branch: `main`
+Diretorio de saida: `.next`
 
 ## Variaveis de ambiente
 

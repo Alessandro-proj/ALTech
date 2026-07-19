@@ -1,6 +1,6 @@
 import type { MetadataRoute } from "next";
 
-const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://altech.dev";
+const baseUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "https://altechweb.com.br";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
