@@ -1,74 +1,60 @@
 "use client";
 
 import {
+  ArrowLeft,
   ArrowRight,
   AtSign,
-  BrainCircuit,
+  BadgeCheck,
   BriefcaseBusiness,
   Cable,
   ChartNoAxesCombined,
+  Check,
   CheckCircle2,
-  ChevronRight,
   Clock3,
   Cloud,
   Code2,
-  Command,
+  Database,
   ExternalLink,
   Globe2,
+  Headphones,
+  Home,
+  LayoutGrid,
   Mail,
   Menu,
-  MessageSquare,
-  Palette,
-  PanelTop,
+  MessageCircle,
+  MonitorSmartphone,
+  PencilLine,
   Phone,
   Rocket,
   Send,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
-  Waypoints,
+  Target,
+  UserRound,
   Workflow,
   X,
+  Zap,
   type LucideIcon,
 } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import Image from "next/image";
 import {
-  AnimatePresence,
-  animate,
-  motion,
-  useInView,
-  useScroll,
-  useTransform,
-} from "framer-motion";
-import {
-  type PointerEvent as ReactPointerEvent,
   type ReactNode,
+  type FormEvent,
+  type PointerEvent,
+  type TouchEvent,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from "react";
-import { ALBotFigure, type ALBotMood } from "./ALBotFigure";
-import { CommandMap } from "./CommandMap";
 
 type Service = {
   title: string;
   description: string;
   icon: LucideIcon;
-  problem: string;
-  result: string;
-};
-
-type ChatMessage = {
-  role: "bot" | "visitor";
-  text: string;
-};
-
-type SystemShowcaseItem = {
-  title: string;
-  category: string;
-  description: string;
-  result: string;
-  image?: string;
+  proof: string;
 };
 
 type ProjectItem = {
@@ -80,10 +66,13 @@ type ProjectItem = {
   impact: string;
   metric: string;
   stack: string[];
-  results: string[];
-  accent: string;
   href: string;
-  image?: string;
+  image: string;
+};
+
+type ChatMessage = {
+  role: "assistant" | "visitor";
+  text: string;
 };
 
 const WHATSAPP_NUMBER = "5521972714119";
@@ -91,324 +80,124 @@ const WHATSAPP_DISPLAY = "+55 21 97271-4119";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
 
 const navItems = [
-  ["Sistemas", "#systems"],
-  ["Projetos", "#projects"],
-  ["Serviços", "#services"],
-  ["Sobre", "#about"],
-  ["Processo", "#process"],
-  ["Contato", "#contact"],
+  { label: "Sobre", href: "#sobre", icon: Home },
+  { label: "Serviços", href: "#servicos", icon: LayoutGrid },
+  { label: "Projetos", href: "#projetos", icon: BriefcaseBusiness },
+  { label: "Processo", href: "#processo", icon: Workflow },
+  { label: "Contato", href: "#contato", icon: Mail },
+] as const;
+
+const heroHighlights: { title: string; text: string; icon: LucideIcon }[] = [
+  {
+    title: "Segurança",
+    text: "Seus dados protegidos com as melhores práticas",
+    icon: ShieldCheck,
+  },
+  {
+    title: "Design responsivo",
+    text: "Experiência perfeita em qualquer dispositivo",
+    icon: MonitorSmartphone,
+  },
+  {
+    title: "Performance",
+    text: "Sites rápidos, otimizados e eficientes",
+    icon: Zap,
+  },
+  {
+    title: "Suporte próximo",
+    text: "Acompanhamento e suporte sempre que precisar",
+    icon: Headphones,
+  },
+];
+
+const trustItems: { label: string; mark: string; href?: string }[] = [
+  {
+    label: "Prefeitura de Belford Roxo",
+    mark: "BR",
+    href: "https://prefeituradebelfordroxo.rj.gov.br/",
+  },
+  { label: "Studio Caty Hair", mark: "CH" },
+  { label: "Morus Agência", mark: "MO" },
+  { label: "Gesso Infinity", mark: "GI" },
+  { label: "Ravier Barbearia", mark: "RV" },
+  { label: "Daniela Peclat", mark: "DP" },
 ] as const;
 
 const services: Service[] = [
   {
-    title: "Websites Premium",
-    description: "Sites institucionais, landing pages e experiências digitais com visual forte, SEO e conversão.",
+    title: "Websites premium",
+    description:
+      "Sites institucionais, landing pages e experiências digitais com narrativa, estética e caminho claro até o contato.",
+    icon: MonitorSmartphone,
+    proof: "Para marcas que precisam parecer tão fortes quanto o que entregam.",
+  },
+  {
+    title: "Sistemas sob medida",
+    description:
+      "Portais, ERPs, CRMs e plataformas web criados em torno do fluxo real da operação.",
     icon: Code2,
-    problem: "Presença digital fraca ou genérica.",
-    result: "Marca mais confiável, clara e pronta para vender.",
+    proof: "Para sair de planilhas, mensagens soltas e processos manuais.",
   },
   {
-    title: "Sistemas Empresariais",
-    description: "ERPs, CRMs, portais internos e plataformas web para organizar operação, equipe e dados.",
-    icon: BriefcaseBusiness,
-    problem: "Processos espalhados em planilhas e mensagens.",
-    result: "Controle total em um sistema feito para o seu fluxo.",
+    title: "Dashboards e dados",
+    description:
+      "Painéis executivos, indicadores, filtros e relatórios para transformar informação em decisão.",
+    icon: ChartNoAxesCombined,
+    proof: "Para gestores que precisam enxergar o negócio sem ruído.",
   },
   {
-    title: "Sistemas Governamentais",
-    description: "Portais e sistemas seguros para atendimento público, análise, permissões e indicadores.",
+    title: "Automações e integrações",
+    description:
+      "APIs, rotinas automáticas e conexões entre ferramentas para reduzir retrabalho e erro operacional.",
+    icon: Workflow,
+    proof: "Para equipes que perdem tempo repetindo tarefas previsíveis.",
+  },
+  {
+    title: "Sistemas governamentais",
+    description:
+      "Soluções com permissões, rastreabilidade, auditoria, relatórios e estabilidade para atendimento público.",
     icon: ShieldCheck,
-    problem: "Atendimento lento, pouco rastreável e difícil de medir.",
-    result: "Serviço digital com auditoria, organização e relatórios.",
+    proof: "Para fluxos que precisam de organização, segurança e clareza.",
   },
   {
-    title: "Dashboards",
-    description: "Painéis executivos com indicadores, filtros e leitura rápida para decisões melhores.",
-    icon: ChartNoAxesCombined,
-    problem: "Dados existem, mas não viram decisão.",
-    result: "Informações em tempo real para agir com segurança.",
-  },
-  {
-    title: "Automações de Processos",
-    description: "Fluxos automatizados para reduzir retrabalho, padronizar tarefas e acelerar a operação.",
-    icon: Workflow,
-    problem: "Rotinas manuais consumindo tempo da equipe.",
-    result: "Mais produtividade e menos erro operacional.",
-  },
-  {
-    title: "APIs e Integrações",
-    description: "Conexões entre sistemas, bancos, CRMs, pagamentos, formulários e ferramentas internas.",
-    icon: Cable,
-    problem: "Ferramentas que não conversam entre si.",
-    result: "Dados conectados e processos mais fluidos.",
-  },
-  {
-    title: "Infraestrutura Cloud",
-    description: "Ambientes, deploy, monitoramento e arquitetura para sistemas estáveis e escaláveis.",
+    title: "Cloud e sustentação",
+    description:
+      "Deploy, monitoramento, infraestrutura e evolução contínua para manter produtos digitais saudáveis.",
     icon: Cloud,
-    problem: "Sistemas frágeis, lentos ou difíceis de manter.",
-    result: "Base confiável para crescer sem perder estabilidade.",
-  },
-  {
-    title: "Consultoria de Produto",
-    description: "Diagnóstico, arquitetura, priorização e plano técnico para sair da ideia com clareza.",
-    icon: BrainCircuit,
-    problem: "Ideias boas sem caminho claro de execução.",
-    result: "Escopo organizado, decisões melhores e menos risco.",
-  },
-  {
-    title: "UI/UX para Sistemas",
-    description: "Interfaces elegantes e fáceis de usar para produtos digitais, portais e dashboards.",
-    icon: Palette,
-    problem: "Sistemas difíceis, confusos ou com baixa adoção.",
-    result: "Experiência premium que reduz atrito e aumenta confiança.",
+    proof: "Para crescer sem transformar manutenção em dor de cabeça.",
   },
 ];
-
-const systemShowcase: SystemShowcaseItem[] = [
-  {
-    title: "CMIPcD",
-    category: "Sistema governamental",
-    description: "Fluxo digital para cadastro, análise e gestão de solicitações com painel administrativo.",
-    image: "/projects/cmipcd.png",
-    result: "Processo público mais organizado, rastreável e mensurável.",
-  },
-  {
-    title: "ERP",
-    category: "Gestão empresarial",
-    description: "Vendas, caixa, estoque, relatórios e operação em uma plataforma única.",
-    image: "/projects/sabor-do-acai.png",
-    result: "Mais controle diário e menos dependência de planilhas.",
-  },
-  {
-    title: "Dashboards",
-    category: "Inteligência operacional",
-    description: "Indicadores visuais para acompanhar desempenho, tendências e gargalos.",
-    result: "Informações em tempo real para decisões mais rápidas.",
-  },
-  {
-    title: "Landing Pages",
-    category: "Conversão e marca",
-    description: "Páginas rápidas, bonitas e orientadas para gerar contato, orçamento ou agendamento.",
-    image: "/projects/barbearia-ravier.png",
-    result: "Experiência premium e fluxo claro até o contato.",
-  },
-];
-
-const outcomeCards = [
-  ["Mais produtividade", "Sistemas que reduzem tarefas repetitivas e deixam a equipe focar no que importa."],
-  ["Controle total", "Dados, usuários, permissões e relatórios reunidos em uma operação clara."],
-  ["Informação em tempo real", "Indicadores vivos para entender o que está acontecendo antes do problema crescer."],
-  ["Escalabilidade", "Produtos digitais preparados para evoluir sem precisar recomeçar do zero."],
-] as const;
-
-const heroFeatures: { label: string; icon: LucideIcon }[] = [
-  { label: "Desenvolvimento sob medida", icon: Code2 },
-  { label: "Performance", icon: Rocket },
-  { label: "Segurança", icon: ShieldCheck },
-  { label: "Suporte contínuo", icon: MessageSquare },
-];
-
-const quoteServices: { label: string; icon: LucideIcon }[] = [
-  { label: "Site profissional", icon: PanelTop },
-  { label: "Landing page", icon: Sparkles },
-  { label: "Sistema sob medida", icon: Code2 },
-  { label: "Dashboard e indicadores", icon: ChartNoAxesCombined },
-  { label: "Automação de processos", icon: Workflow },
-  { label: "Loja virtual", icon: ShoppingBag },
-  { label: "Portal institucional", icon: Globe2 },
-  { label: "Suporte e manutenção", icon: ShieldCheck },
-  { label: "Outro projeto", icon: BriefcaseBusiness },
-];
-
-const projectObjectives: { label: string; icon: LucideIcon }[] = [
-  { label: "Vender mais", icon: Rocket },
-  { label: "Automatizar processos", icon: Workflow },
-  { label: "Organizar informações", icon: ChartNoAxesCombined },
-  { label: "Criar presença digital", icon: Globe2 },
-  { label: "Modernizar um sistema existente", icon: Sparkles },
-  { label: "Outro", icon: MessageSquare },
-];
-
-const startOptions = [
-  "O quanto antes",
-  "Nas próximas semanas",
-  "Ainda estou planejando",
-] as const;
-
-const productCapabilities: { title: string; description: string; icon: LucideIcon; className: string }[] = [
-  {
-    title: "Sistema Web",
-    description: "Aplicações modernas e escaláveis.",
-    icon: PanelTop,
-    className: "cap-a",
-  },
-  {
-    title: "Dashboard Executivo",
-    description: "Indicadores em tempo real.",
-    icon: ChartNoAxesCombined,
-    className: "cap-b",
-  },
-  {
-    title: "Portal Corporativo",
-    description: "Experiência premium.",
-    icon: BriefcaseBusiness,
-    className: "cap-c",
-  },
-  {
-    title: "API Integrada",
-    description: "Comunicação entre sistemas.",
-    icon: Cable,
-    className: "cap-d",
-  },
-  {
-    title: "Cloud Ready",
-    description: "Infraestrutura escalável.",
-    icon: Cloud,
-    className: "cap-e",
-  },
-  {
-    title: "Automações",
-    description: "Fluxos inteligentes.",
-    icon: Workflow,
-    className: "cap-f",
-  },
-];
-
-const trustedCompanies = [
-  "Prefeitura Municipal",
-  "Studio Caty Hair",
-  "Morus Agência",
-  "Gesso Infinity",
-  "Ravier",
-  "Daniela Peclat",
-] as const;
-
-const trustBadges = [
-  "Desenvolvimento sob medida",
-  "Suporte próximo",
-  "Infraestrutura cloud",
-  "Entrega contínua",
-  "Código limpo",
-  "Performance",
-] as const;
-
-const techs = [
-  ["Next.js", "N", "Aplicações modernas"],
-  ["NestJS", "NE", "APIs robustas"],
-  ["Node.js", "JS", "Back-end escalável"],
-  ["Docker", "DK", "Ambientes previsíveis"],
-  ["PostgreSQL", "PG", "Dados confiáveis"],
-  ["MySQL", "MY", "Banco relacional"],
-  ["Supabase", "SB", "Produtos rápidos"],
-  ["GitHub", "GH", "Versionamento"],
-  ["Cloudflare", "CF", "Edge e segurança"],
-  ["Vercel", "VC", "Entrega global"],
-  ["TypeScript", "TS", "Código seguro"],
-  ["Tailwind", "TW", "UI consistente"],
-] as const;
 
 const projects: ProjectItem[] = [
   {
     title: "CMIPcD",
     tag: "Governo digital",
     description:
-      "Sistema completo para emissão, análise e gestão da Carteira Municipal da Pessoa com Deficiência.",
-    problem: "O processo precisava sair do atendimento manual e ganhar rastreabilidade.",
-    solution: "Criamos uma plataforma web com cadastro, análise, permissões e painel de indicadores.",
-    impact: "Atendimento público mais organizado, decisões mais rápidas e gestão com dados claros.",
+      "Sistema para emissão, análise e gestão da Carteira Municipal da Pessoa com Deficiência.",
+    problem:
+      "O atendimento precisava sair do fluxo manual e ganhar rastreabilidade.",
+    solution:
+      "Criamos uma plataforma com cadastro, análise, permissões e painel administrativo.",
+    impact:
+      "Processo público mais organizado, mensurável e simples de acompanhar.",
     metric: "4.000+ cadastros",
     stack: ["Next.js", "PostgreSQL", "Cloud", "BI"],
-    results: ["4.000+ cadastros processados", "Fluxo com auditoria", "Painel de indicadores"],
-    accent: "blue",
     href: "https://carteirapcd.prefeituradebelfordroxo.rj.gov.br/",
     image: "/projects/cmipcd.png",
   },
   {
-    title: "Portal Administrativo",
-    tag: "Operação integrada",
-    description:
-      "Central administrativa com permissões, módulos, relatórios, automações e trilha de eventos.",
-    problem: "Equipes precisavam controlar informações em vários fluxos desconectados.",
-    solution: "Desenhamos um portal modular para gestão, usuários, logs, automações e relatórios.",
-    impact: "Operação mais previsível, com menos retrabalho e mais visibilidade para gestores.",
-    metric: "multi-módulos",
-    stack: ["TypeScript", "Node.js", "Docker", "APIs"],
-    results: ["Gestão por perfis", "Integrações internas", "Logs operacionais"],
-    accent: "cyan",
-    href: "#contact",
-  },
-  {
-    title: "Dashboards Executivos",
-    tag: "Dados em movimento",
-    description:
-      "Painéis de decisão com métricas, disponibilidade, indicadores e leitura clara de tendências.",
-    problem: "Indicadores importantes ficavam escondidos em tabelas, arquivos e ferramentas separadas.",
-    solution: "Concentramos dados em painéis visuais com alertas, filtros e leitura executiva.",
-    impact: "Gestores enxergam prioridades mais rápido e tomam decisão com menos ruído.",
-    metric: "tempo real",
-    stack: ["BI", "PostgreSQL", "Cloudflare", "Tailwind"],
-    results: ["Indicadores em tempo real", "Alertas acionáveis", "Exportação de relatórios"],
-    accent: "white",
-    href: "#contact",
-  },
-  {
-    title: "ERP Sabor do Açaí",
-    tag: "Sistema empresarial",
-    description:
-      "ERP real para gestão de vendas, caixa, estoque, relatórios e operação integrada com Supabase.",
-    problem: "A rotina comercial precisava de mais controle sobre caixa, estoque e vendas.",
-    solution: "Construímos um ERP web com visão administrativa e registros de operação.",
-    impact: "Mais organização no dia a dia e leitura mais clara dos números do negócio.",
-    metric: "operação centralizada",
-    stack: ["JavaScript", "Supabase", "HTML", "CSS"],
-    results: ["Dashboard administrativo", "Controle de caixa", "Controle de estoque"],
-    accent: "green",
-    href: "https://sabordoacai.vercel.app/",
-    image: "/projects/sabor-do-acai.png",
-  },
-  {
-    title: "Gesso Infinity",
-    tag: "Website corporativo",
-    description:
-      "Website institucional moderno para empresa de drywall e estruturas metálicas, focado em identidade visual e conversão.",
-    problem: "A marca precisava transmitir confiança e apresentar serviços com mais clareza.",
-    solution: "Criamos um website responsivo com catálogo, narrativa comercial e contato rápido.",
-    impact: "Presença digital mais profissional e caminho mais direto até o WhatsApp.",
-    metric: "site responsivo",
-    stack: ["HTML", "CSS", "JavaScript", "UI Design"],
-    results: ["Design responsivo", "Catálogo de produtos", "Integração WhatsApp"],
-    accent: "blue",
-    href: "https://gessoinfinity.com.br/",
-    image: "/projects/gesso-infinity.png",
-  },
-  {
-    title: "Studio Caty Hair",
-    tag: "Website premium",
-    description:
-      "Site moderno para salão de beleza, com experiência visual premium, hero com vídeo e conversão para atendimento.",
-    problem: "O posicionamento visual precisava acompanhar a experiência premium do salão.",
-    solution: "Desenvolvemos uma página com impacto visual, serviços e chamada direta para atendimento.",
-    impact: "Mais percepção de valor e experiência mais elegante para novos clientes.",
-    metric: "experiência premium",
-    stack: ["HTML", "CSS", "JavaScript", "UI Design"],
-    results: ["Hero com vídeo", "Interface premium", "Integração WhatsApp"],
-    accent: "cyan",
-    href: "https://catyhair.vercel.app/",
-    image: "/projects/studio-caty-hair.png",
-  },
-  {
     title: "Agência Morus",
-    tag: "Marca e presença digital",
+    tag: "Presença digital",
     description:
-      "Site premium para agência de estratégia, conteúdo e posicionamento, com narrativa forte, serviços e conversão.",
-    problem: "A agência precisava apresentar método, autoridade e serviços sem parecer genérica.",
-    solution: "Criamos uma presença digital com narrativa de marca, seções comerciais e SEO.",
-    impact: "Comunicação mais forte e fluxo de contato mais objetivo para potenciais clientes.",
+      "Site premium para agência de estratégia, conteúdo e posicionamento.",
+    problem:
+      "A marca precisava comunicar método e autoridade sem parecer genérica.",
+    solution:
+      "Desenvolvemos uma presença digital com narrativa forte, SEO e conversão.",
+    impact:
+      "Comunicação mais clara e fluxo de contato mais objetivo para novos clientes.",
     metric: "marca posicionada",
     stack: ["Next.js", "UI Design", "SEO", "WhatsApp"],
-    results: ["Posicionamento premium", "Seções comerciais completas", "Contato otimizado"],
-    accent: "white",
     href: "https://larianemorus.vercel.app/",
     image: "/projects/agencia-morus.png",
   },
@@ -416,310 +205,1012 @@ const projects: ProjectItem[] = [
     title: "Daniela Peclat",
     tag: "Psicologia e atendimento",
     description:
-      "Website profissional para psicóloga, com comunicação acolhedora, SEO local, serviços e agendamento por WhatsApp.",
-    problem: "A presença online precisava transmitir acolhimento, confiança e clareza de atendimento.",
-    solution: "Criamos um website profissional com serviços, copy humanizada e agendamento.",
-    impact: "Mais segurança para quem chega ao site e caminho simples para iniciar contato.",
+      "Website profissional para psicóloga, com comunicação acolhedora e SEO local.",
+    problem:
+      "A presença online precisava transmitir confiança antes do primeiro contato.",
+    solution:
+      "Criamos copy humanizada, estrutura de serviços e agendamento pelo WhatsApp.",
+    impact:
+      "Experiência mais segura para quem chega ao site e precisa iniciar cuidado.",
     metric: "agendamento direto",
     stack: ["Web Design", "SEO", "WhatsApp", "Responsivo"],
-    results: ["Atendimento online e presencial", "Copy humanizada", "Fluxo de agendamento"],
-    accent: "blue",
     href: "https://danielapeclat.com.br/",
     image: "/projects/daniela-peclat.png",
   },
   {
-    title: "Barbearia Ravier",
-    tag: "Serviços com agendamento",
+    title: "ERP Sabor do Açaí",
+    tag: "Sistema empresarial",
     description:
-      "Landing page premium para barbearia, com vitrine de serviços, prova social, galeria e agendamento online.",
-    problem: "A barbearia precisava converter visitantes em agendamentos com uma experiência melhor.",
-    solution: "Criamos uma landing page com serviços, galeria, prova social e chamada para reserva.",
-    impact: "Mais clareza comercial e fluxo mais rápido para marcar horário.",
-    metric: "conversão local",
-    stack: ["Next.js", "UI Design", "Agendamento", "WhatsApp"],
-    results: ["Agendamento rápido", "Galeria de trabalhos", "Área administrativa"],
-    accent: "cyan",
-    href: "https://barbeariaravier.vercel.app/",
-    image: "/projects/barbearia-ravier.png",
+      "ERP web para vendas, caixa, estoque, relatórios e operação integrada.",
+    problem:
+      "A rotina comercial precisava de mais controle sobre números e registros.",
+    solution:
+      "Construímos uma plataforma administrativa conectada ao fluxo do negócio.",
+    impact:
+      "Mais organização no dia a dia e leitura mais clara da operação.",
+    metric: "operação centralizada",
+    stack: ["JavaScript", "Supabase", "HTML", "CSS"],
+    href: "https://sabordoacai.vercel.app/",
+    image: "/projects/sabor-do-acai.png",
+  },
+  {
+    title: "Gesso Infinity",
+    tag: "Website corporativo",
+    description:
+      "Site institucional para empresa de drywall e estruturas metálicas.",
+    problem:
+      "A empresa precisava apresentar serviços com mais clareza e confiança.",
+    solution:
+      "Organizamos catálogo, narrativa comercial e contato rápido pelo WhatsApp.",
+    impact:
+      "Presença digital mais profissional e caminho direto para orçamento.",
+    metric: "site responsivo",
+    stack: ["HTML", "CSS", "JavaScript", "UI Design"],
+    href: "https://gessoinfinity.com.br/",
+    image: "/projects/gesso-infinity.png",
+  },
+  {
+    title: "Studio Caty Hair",
+    tag: "Website premium",
+    description:
+      "Página moderna para salão de beleza com experiência visual e conversão.",
+    problem:
+      "O posicionamento digital precisava acompanhar a experiência premium do salão.",
+    solution:
+      "Criamos uma página com impacto visual, serviços e chamada direta para atendimento.",
+    impact:
+      "Mais percepção de valor e experiência elegante para novos clientes.",
+    metric: "experiência premium",
+    stack: ["HTML", "CSS", "JavaScript", "UI Design"],
+    href: "https://catyhair.vercel.app/",
+    image: "/projects/studio-caty-hair.png",
   },
 ];
 
 const processSteps = [
-  ["01", "Contato", "Entendemos a necessidade e o contexto."],
-  ["02", "Planejamento", "Definimos escopo, arquitetura e prioridades."],
-  ["03", "Prototipação", "Transformamos ideias em fluxo visual."],
-  ["04", "Desenvolvimento", "Construímos com qualidade e versionamento."],
-  ["05", "Testes", "Validamos segurança, performance e uso real."],
-  ["06", "Entrega", "Publicamos, monitoramos e evoluímos."],
+  {
+    number: "01",
+    title: "Descoberta",
+    description: "Entendemos objetivo, público, operação, urgência e pontos de atrito.",
+  },
+  {
+    number: "02",
+    title: "Estratégia",
+    description: "Organizamos escopo, arquitetura, conteúdo, prioridades e caminho visual.",
+  },
+  {
+    number: "03",
+    title: "Construção",
+    description: "Transformamos direção em telas, integrações e produto funcional.",
+  },
+  {
+    number: "04",
+    title: "Entrega",
+    description: "Publicamos, testamos, ajustamos e deixamos a solução pronta para uso.",
+  },
+  {
+    number: "05",
+    title: "Evolução",
+    description: "Acompanhamos melhorias, estabilidade e próximos passos do produto.",
+  },
 ] as const;
 
-const testimonials = [
+const workModes = [
   {
-    quote:
-      "A AL Tech entregou um sistema moderno, seguro e acima do que imaginávamos.",
-    author: "Secretaria Municipal",
-    role: "Projeto público digital",
-    project: "Sistema governamental",
-    result: "Atendimento mais organizado",
-    metric: "4.000+ cadastros",
-    initials: "SM",
+    title: "Presença digital",
+    description:
+      "Para marcas que precisam de site, landing page, posicionamento, SEO e conversão.",
+    icon: Globe2,
+    items: ["Estratégia de página", "Design premium", "WhatsApp e SEO"],
   },
   {
-    quote:
-      "Profissionalismo, agilidade e domínio técnico. A experiência parece de empresa grande.",
-    author: "Empresa parceira",
-    role: "Setor privado",
-    project: "Portal administrativo",
-    result: "Operação mais clara",
-    metric: "multi-módulos",
-    initials: "EP",
+    title: "Sistema sob medida",
+    description:
+      "Para negócios que precisam controlar processos, usuários, dados, vendas ou atendimento.",
+    icon: Code2,
+    items: ["Escopo funcional", "Painel administrativo", "Banco de dados e APIs"],
   },
   {
-    quote:
-      "O painel trouxe clareza imediata para decisões que antes dependiam de planilhas.",
-    author: "Coordenação",
-    role: "Assistência Social",
-    project: "Dashboard executivo",
-    result: "Decisões com dados",
-    metric: "tempo real",
-    initials: "CO",
+    title: "Evolução contínua",
+    description:
+      "Para quem já tem produto digital e precisa melhorar experiência, estabilidade ou escala.",
+    icon: ChartNoAxesCombined,
+    items: ["Diagnóstico técnico", "Melhorias por fase", "Deploy e sustentação"],
+  },
+] as const;
+
+const techs = [
+  "Next.js",
+  "TypeScript",
+  "Node.js",
+  "PostgreSQL",
+  "Supabase",
+  "Cloudflare",
+  "Docker",
+  "Tailwind",
+] as const;
+
+const quoteServices: { label: string; icon: LucideIcon }[] = [
+  { label: "Site profissional", icon: MonitorSmartphone },
+  { label: "Landing page", icon: Sparkles },
+  { label: "Sistema sob medida", icon: Code2 },
+  { label: "Dashboard", icon: ChartNoAxesCombined },
+  { label: "Automação", icon: Workflow },
+  { label: "Loja virtual", icon: ShoppingBag },
+  { label: "Portal", icon: Globe2 },
+  { label: "API / integração", icon: Cable },
+  { label: "Outro", icon: BriefcaseBusiness },
+];
+
+const aboutPrinciples: { title: string; text: string; icon: LucideIcon }[] = [
+  {
+    title: "Estratégia",
+    text: "Entendemos o objetivo e definimos o melhor caminho para chegar lá.",
+    icon: Target,
   },
   {
-    quote:
-      "A comunicação ficou muito mais profissional e o caminho até o WhatsApp ficou simples.",
-    author: "Negócio local",
-    role: "Serviços e agendamento",
-    project: "Landing page premium",
-    result: "Mais confiança no primeiro acesso",
-    metric: "conversão local",
-    initials: "NL",
+    title: "Design",
+    text: "Clareza visual, foco no usuário e identidade que transmite confiança.",
+    icon: PencilLine,
   },
   {
-    quote:
-      "O visual elevou a percepção da marca sem deixar o site pesado ou confuso.",
-    author: "Marca parceira",
-    role: "Presença digital",
-    project: "Website institucional",
-    result: "Marca mais forte",
-    metric: "SEO + performance",
-    initials: "MP",
+    title: "Engenharia",
+    text: "Código limpo, performance e soluções feitas para escalar com segurança.",
+    icon: Code2,
   },
 ];
 
-const testimonialSignals = [
-  ["Escopo claro", "O projeto começa com diagnóstico e prioridades bem definidas."],
-  ["Interface premium", "Cada tela é pensada para transmitir confiança e facilitar o uso."],
-  ["Entrega assistida", "Publicação, ajustes finais e suporte para entrada em produção."],
-  ["Evolução contínua", "A solução nasce pronta para receber novos módulos e melhorias."],
-] as const;
+function PWARegister() {
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
+    }
+  }, []);
+
+  return null;
+}
+
+function useActiveSection() {
+  const [active, setActive] = useState("inicio");
+
+  useEffect(() => {
+    const ids = ["inicio", ...navItems.map(({ href }) => href.replace("#", ""))];
+    const sections = ids
+      .map((id) => document.getElementById(id))
+      .filter((section): section is HTMLElement => Boolean(section));
+
+    if (!sections.length) return undefined;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+        if (visible?.target.id) setActive(visible.target.id);
+      },
+      { rootMargin: "-42% 0px -48% 0px", threshold: [0.12, 0.3, 0.55] },
+    );
+
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
+  return active;
+}
 
 function Reveal({
   children,
   className = "",
   delay = 0,
+  direction = "up",
+  duration = 0.68,
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
+  direction?: "up" | "left" | "right" | "scale";
+  duration?: number;
 }) {
+  const reduceMotion = useReducedMotion();
+  const distance = direction === "up" ? 28 : 30;
+  const initial =
+    direction === "left"
+      ? { opacity: 0, x: -distance }
+      : direction === "right"
+        ? { opacity: 0, x: distance }
+        : direction === "scale"
+          ? { opacity: 0, y: 18, scale: 0.985 }
+          : { opacity: 0, y: distance };
+  const animate =
+    direction === "left" || direction === "right"
+      ? { opacity: 1, x: 0 }
+      : direction === "scale"
+        ? { opacity: 1, y: 0, scale: 1 }
+        : { opacity: 1, y: 0 };
+
   return (
     <motion.div
       className={className}
-      initial={{ opacity: 0, y: 34, scale: 0.985, filter: "blur(14px)" }}
-      whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
-      viewport={{ once: true, margin: "-90px" }}
-      transition={{ duration: 0.75, delay, ease: [0.2, 0.8, 0.2, 1] }}
+      initial={reduceMotion ? false : initial}
+      whileInView={reduceMotion ? undefined : animate}
+      viewport={{ once: true, amount: 0.22, margin: "-96px 0px -80px" }}
+      transition={{ duration, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
     </motion.div>
   );
 }
 
-function TiltCard({
-  children,
-  className = "",
-  onFocusMessage,
-}: {
-  children: ReactNode;
-  className?: string;
-  onFocusMessage?: string;
-}) {
-  const onPointerMove = (event: ReactPointerEvent<HTMLElement>) => {
-    const target = event.currentTarget;
-    const rect = target.getBoundingClientRect();
-    const px = (event.clientX - rect.left) / rect.width - 0.5;
-    const py = (event.clientY - rect.top) / rect.height - 0.5;
-    target.style.setProperty("--rx", `${(-py * 7).toFixed(2)}deg`);
-    target.style.setProperty("--ry", `${(px * 9).toFixed(2)}deg`);
-    target.style.setProperty("--spot-x", `${event.clientX - rect.left}px`);
-    target.style.setProperty("--spot-y", `${event.clientY - rect.top}px`);
-  };
-
-  const onPointerLeave = (event: ReactPointerEvent<HTMLElement>) => {
-    const target = event.currentTarget;
-    target.style.setProperty("--rx", "0deg");
-    target.style.setProperty("--ry", "0deg");
-  };
-
+function Logo() {
   return (
-    <motion.article
-      className={`liquid-card ${className}`}
-      onPointerMove={onPointerMove}
-      onPointerLeave={onPointerLeave}
-      data-focus-message={onFocusMessage}
-      whileHover={{ y: -6 }}
-      transition={{ duration: 0.25 }}
-    >
-      {children}
-    </motion.article>
-  );
-}
-
-function Logo({
-  onClick,
-  compact = false,
-}: {
-  onClick?: () => void;
-  compact?: boolean;
-}) {
-  return (
-    <button
-      className={`brand-logo ${compact ? "brand-logo-compact" : ""}`}
-      onClick={onClick}
-      aria-label="AL Tech"
-      type="button"
-    >
+    <a className="brand-logo" href="#inicio" aria-label="AL Tech">
       <span className="brand-mark">
-        <span>A</span>
-        <span>L</span>
+        A<b>L</b>
       </span>
-      <span className="brand-word">TECH</span>
-    </button>
+      <span>
+        <strong>AL Tech</strong>
+        <small>Desenvolvimento digital</small>
+      </span>
+    </a>
   );
 }
 
-function MetricCounter({
-  value,
-  label,
-  suffix = "",
-  prefix = "",
-  decimals = 0,
+function SectionHeading({
+  eyebrow,
+  title,
+  children,
+  align = "left",
 }: {
-  value: number;
-  label: string;
-  suffix?: string;
-  prefix?: string;
-  decimals?: number;
+  eyebrow: string;
+  title: ReactNode;
+  children?: ReactNode;
+  align?: "left" | "center";
 }) {
-  const ref = useRef<HTMLDivElement | null>(null);
-  const inView = useInView(ref, { once: true, margin: "-120px" });
-  const [display, setDisplay] = useState(0);
-
-  useEffect(() => {
-    if (!inView) return;
-    const controls = animate(0, value, {
-      duration: 2.1,
-      ease: "easeOut",
-      onUpdate: setDisplay,
-    });
-
-    return () => controls.stop();
-  }, [inView, value]);
-
-  const formatted =
-    value >= 100000
-      ? `${Math.round(display / 1000)}k`
-      : decimals
-        ? display.toFixed(decimals)
-        : Math.round(display).toLocaleString("pt-BR");
-
   return (
-    <div ref={ref} className="metric-counter">
-      <strong>
-        {prefix}
-        {formatted}
-        {suffix}
-      </strong>
-      <span>{label}</span>
+    <div className={`section-heading ${align === "center" ? "center" : ""}`}>
+      <span className="eyebrow">{eyebrow}</span>
+      <h2>{title}</h2>
+      {children && <p>{children}</p>}
     </div>
   );
 }
 
-function DeveloperConsole({
-  open,
-  onClose,
-}: {
-  open: boolean;
-  onClose: () => void;
-}) {
+function Header() {
+  const [open, setOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+  const active = useActiveSection();
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 20);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle("menu-open", open);
+    return () => document.body.classList.remove("menu-open");
+  }, [open]);
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, []);
+
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div
-          className="developer-overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
+    <header className={`site-header ${scrolled ? "scrolled" : ""}`}>
+      <div className="nav-bar">
+        <Logo />
+        <nav className={open ? "open" : ""} aria-label="Navegação principal">
+          {navItems.map(({ label, href, icon: Icon }) => {
+            const id = href.replace("#", "");
+            const activeItem = active === id;
+
+            return (
+              <a
+                key={label}
+                href={href}
+                className={activeItem ? "active" : ""}
+                aria-current={activeItem ? "page" : undefined}
+                onClick={() => setOpen(false)}
+              >
+                <Icon aria-hidden="true" />
+                <span>{label}</span>
+              </a>
+            );
+          })}
+        </nav>
+        <a className="nav-cta" href="#contato">
+          Orçamento <ArrowRight />
+        </a>
+        <button
+          className="menu-button"
+          type="button"
+          onClick={() => setOpen((value) => !value)}
+          aria-label={open ? "Fechar menu" : "Abrir menu"}
+          aria-expanded={open}
         >
-          <motion.div
-            className="developer-console"
-            initial={{ y: 28, scale: 0.96, filter: "blur(12px)" }}
-            animate={{ y: 0, scale: 1, filter: "blur(0px)" }}
-            exit={{ y: 20, scale: 0.96, filter: "blur(12px)" }}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Modo desenvolvedor da AL Tech"
-          >
-            <button className="icon-button console-close" onClick={onClose} type="button">
-              <X />
-            </button>
-            <div className="developer-heading">
-              <Command />
-              <div>
-                <span>Modo Desenvolvedor</span>
-                <strong>Você encontrou a sala técnica da AL Tech.</strong>
-              </div>
-            </div>
-            <div className="developer-matrix">
-              {[
-                ["Deploy", "green", "online"],
-                ["GitHub", "blue", "main sincronizada"],
-                ["Tecnologias", "blue", "Next.js 16 + TypeScript"],
-                ["Roadmap", "white", "Sistemas, Cloud e Produtos Web"],
-                ["Build", "green", "performance target 100"],
-                ["Segurança", "blue", "observabilidade ativa"],
-              ].map(([label, color, value]) => (
-                <div key={label} className={`developer-cell ${color}`}>
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          {open ? <X /> : <Menu />}
+        </button>
+      </div>
+    </header>
   );
 }
 
-function ChatDock({
-  mood,
-  botMessage,
-  onOpenMessage,
-  muted = false,
-}: {
-  mood: ALBotMood;
-  botMessage: string;
-  onOpenMessage: (message: string) => void;
-  muted?: boolean;
-}) {
+function HeroVisual() {
+  return (
+    <div className="hero-visual hero-stack-visual" aria-label="Estrutura digital da AL Tech">
+      <div className="hero-ambient-grid" aria-hidden="true" />
+      <div className="hero-orbit hero-orbit-one" aria-hidden="true" />
+      <div className="hero-stack" aria-hidden="true">
+        <span className="hero-stack-layer stack-base" />
+        <span className="hero-stack-layer stack-mid" />
+        <span className="hero-stack-layer stack-top" />
+      </div>
+      <div className="hero-info-card founder-card">
+        <UserRound />
+        <div>
+          <strong>Fundador e desenvolvedor</strong>
+          <span>Atendimento direto e personalizado</span>
+        </div>
+      </div>
+      <div className="hero-info-card launch-card">
+        <Rocket />
+        <div>
+          <strong>Do planejamento ao lançamento</strong>
+          <span>Processos ágeis e transparentes</span>
+        </div>
+      </div>
+      <div className="hero-info-card solution-card">
+        <Code2 />
+        <div>
+          <strong>Soluções sob medida</strong>
+          <span>Desenvolvimento focado no que realmente importa para você</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroSection() {
+  return (
+    <section id="inicio" className="hero-section">
+      <div className="hero-inner">
+        <Reveal className="hero-copy">
+          <span className="eyebrow">Atendimento remoto para todo o Brasil</span>
+          <h1>
+            Tecnologia com propósito. <span>Estratégia que gera resultados.</span>
+          </h1>
+          <p>
+            Desenvolvemos sites, sistemas e plataformas digitais pensados para
+            otimizar processos, fortalecer marcas e transformar ideias em soluções
+            reais.
+          </p>
+          <div className="hero-actions">
+            <a className="primary-button" href="#contato">
+              Quero tirar minha ideia do papel <ArrowRight />
+            </a>
+            <a className="secondary-button" href="#projetos">
+              Ver projetos <ArrowRight />
+            </a>
+          </div>
+        </Reveal>
+        <Reveal className="hero-media" delay={0.08}>
+          <HeroVisual />
+        </Reveal>
+        <Reveal className="hero-feature-bar" delay={0.12}>
+          {heroHighlights.map(({ title, text, icon: Icon }) => (
+            <article key={title}>
+              <Icon aria-hidden="true" />
+              <div>
+                <strong>{title}</strong>
+                <span>{text}</span>
+              </div>
+            </article>
+          ))}
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function TrustStrip() {
+  return (
+    <section className="trust-strip" aria-label="Projetos e marcas do portfólio">
+      <span>Projetos e marcas que passaram pela AL Tech</span>
+      <div>
+        {trustItems.map((item) => (
+          item.href ? (
+            <a
+              key={item.label}
+              className="trust-item"
+              href={item.href}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <small>{item.mark}</small>
+              <strong>{item.label}</strong>
+            </a>
+          ) : (
+            <article key={item.label} className="trust-item">
+              <small>{item.mark}</small>
+              <strong>{item.label}</strong>
+            </article>
+          )
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProblemSection() {
+  const reduceMotion = useReducedMotion();
+  const ease = [0.16, 1, 0.3, 1] as const;
+  const painPoints = [
+    {
+      icon: MonitorSmartphone,
+      title: "Presença sem força",
+      text: "O site parece genérico e não passa o valor real da marca.",
+    },
+    {
+      icon: Send,
+      title: "Operação espalhada",
+      text: "A operação depende de planilhas, mensagens e retrabalho.",
+    },
+    {
+      icon: Database,
+      title: "Dados sem leitura",
+      text: "Os dados existem, mas não viram decisão com clareza.",
+    },
+  ];
+
+  return (
+    <section className="problem-section">
+      <Reveal className="problem-copy" direction="left">
+        <span className="eyebrow">Talvez sua empresa esteja aqui</span>
+        <h2>
+          Você tem uma boa entrega, mas sua estrutura digital ainda não mostra isso.
+        </h2>
+      </Reveal>
+      <Reveal className="problem-stack" direction="right" delay={0.08}>
+        {painPoints.map(({ icon: Icon, title, text }, index) => (
+          <motion.article
+            key={title}
+            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
+            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.42, margin: "-80px 0px -60px" }}
+            transition={{ duration: 0.54, delay: index * 0.08, ease }}
+          >
+            <Icon />
+            <div>
+              <strong>{title}</strong>
+              <p>{text}</p>
+            </div>
+          </motion.article>
+        ))}
+      </Reveal>
+    </section>
+  );
+}
+
+function AboutSection() {
+  const reduceMotion = useReducedMotion();
+  const ease = [0.16, 1, 0.3, 1] as const;
+
+  return (
+    <section id="sobre" className="about-section">
+      <div className="about-layout">
+        <Reveal className="about-portrait" direction="left" delay={0.04}>
+          <Image
+            src="/alessandro-araujo.jpg"
+            alt="Retrato de Alessandro Araujo"
+            fill
+            sizes="(max-width: 820px) 92vw, 40vw"
+          />
+          <span className="portrait-chip">
+            <BadgeCheck />
+            Fundador
+          </span>
+          <div className="portrait-label">
+            <span>Alessandro Araujo</span>
+            <strong>Fundador da AL Tech</strong>
+            <i aria-hidden="true" />
+            <p>
+              Estratégia, design e tecnologia para criar soluções que geram
+              impacto.
+            </p>
+          </div>
+        </Reveal>
+        <Reveal className="about-story" direction="right" delay={0.1}>
+          <span className="eyebrow">Sobre a AL Tech</span>
+          <h2>
+            Uma empresa pequena o suficiente para cuidar de perto, técnica o
+            bastante para construir <span>grande.</span>
+          </h2>
+          <i className="about-title-line" aria-hidden="true" />
+          <p>
+            Sou Alessandro Araujo, fundador da AL Tech. Eu uno visão de negócio,
+            design e desenvolvimento para criar soluções digitais que façam sentido
+            para quem compra, para quem usa e para quem precisa manter tudo rodando.
+          </p>
+          <p>
+            A ideia não é empilhar tecnologia. É entender o problema, escolher o
+            caminho certo e entregar uma experiência que pareça simples, mesmo quando
+            existe muita engenharia por trás.
+          </p>
+          <div className="working-principles">
+            {aboutPrinciples.map(({ title, text, icon: Icon }, index) => (
+              <motion.article
+                key={title}
+                initial={reduceMotion ? false : { opacity: 0, y: 18 }}
+                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.3, margin: "-80px 0px -60px" }}
+                transition={{ duration: 0.58, delay: 0.12 + index * 0.09, ease }}
+              >
+                <Icon aria-hidden="true" />
+                <div>
+                  <span>{title}</span>
+                  <p>{text}</p>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        </Reveal>
+      </div>
+    </section>
+  );
+}
+
+function ServicesSection() {
+  return (
+    <section id="servicos" className="services-section">
+      <Reveal direction="left">
+        <SectionHeading
+          eyebrow="O que fazemos"
+          title="Estrutura digital para marcas, operações e produtos."
+        >
+          Cada entrega nasce de uma necessidade concreta: vender melhor, organizar
+          processos, criar autoridade, medir resultados ou sustentar crescimento.
+        </SectionHeading>
+      </Reveal>
+      <div className="service-bento">
+        {services.map(({ title, description, icon: Icon, proof }, index) => (
+          <Reveal key={title} delay={0.08 + index * 0.085} duration={0.62}>
+            <article className={`service-card ${index < 2 ? "wide" : ""}`}>
+              <div className="service-icon">
+                <Icon />
+              </div>
+              <span>{String(index + 1).padStart(2, "0")}</span>
+              <h3>{title}</h3>
+              <p>{description}</p>
+              <strong>{proof}</strong>
+              <a href="#contato" aria-label={`Conversar sobre ${title}`}>
+                <ArrowRight />
+              </a>
+            </article>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProjectCarousel() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const touchStartX = useRef<number | null>(null);
+  const reduceMotion = useReducedMotion();
+  const project = projects[activeIndex];
+
+  const goTo = (index: number) => {
+    const nextIndex = (index + projects.length) % projects.length;
+    setActiveIndex(nextIndex);
+  };
+
+  const goNext = () => goTo(activeIndex + 1);
+  const goPrevious = () => goTo(activeIndex - 1);
+
+  useEffect(() => {
+    if (paused || reduceMotion) return undefined;
+
+    const timer = window.setInterval(() => {
+      setActiveIndex((current) => (current + 1) % projects.length);
+    }, 6000);
+
+    return () => window.clearInterval(timer);
+  }, [activeIndex, paused, reduceMotion]);
+
+  const onTouchStart = (event: TouchEvent<HTMLElement>) => {
+    touchStartX.current = event.touches[0]?.clientX ?? null;
+  };
+
+  const onTouchEnd = (event: TouchEvent<HTMLElement>) => {
+    if (touchStartX.current === null) return;
+    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
+    const distance = endX - touchStartX.current;
+
+    if (Math.abs(distance) > 42) {
+      if (distance < 0) goNext();
+      else goPrevious();
+    }
+
+    touchStartX.current = null;
+  };
+
+  return (
+    <section id="projetos" className="projects-section">
+      <Reveal direction="left">
+        <SectionHeading
+          eyebrow="Projetos"
+          title="Cases reais, vistos um por vez."
+        >
+          O portfólio aparece em foco: uma tela grande, contexto do problema e o
+          impacto de cada entrega sem transformar a página em uma lista infinita.
+        </SectionHeading>
+      </Reveal>
+
+      <Reveal className="carousel-shell" direction="scale" delay={0.08} duration={0.72}>
+        <div
+          className="case-carousel"
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
+          onFocus={() => setPaused(true)}
+          onBlur={() => setPaused(false)}
+          onTouchStart={onTouchStart}
+          onTouchEnd={onTouchEnd}
+        >
+          <button
+            className="carousel-button previous"
+            type="button"
+            onClick={goPrevious}
+            aria-label="Ver projeto anterior"
+          >
+            <ArrowLeft />
+          </button>
+
+          <AnimatePresence mode="wait">
+            <motion.article
+              key={project.title}
+              className="case-slide"
+              initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.985 }}
+              animate={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -16, scale: 0.99 }}
+              transition={{ duration: 0.52, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <a
+                className="case-preview"
+                href={project.href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={`Ver projeto ${project.title}`}
+              >
+                <Image
+                  src={project.image}
+                  alt={`Screenshot do projeto ${project.title}`}
+                  fill
+                  unoptimized
+                  sizes="(max-width: 820px) 92vw, 58vw"
+                />
+              </a>
+              <div className="case-content">
+                <span>{project.tag}</span>
+                <h3>{project.title}</h3>
+                <p>{project.description}</p>
+                <dl>
+                  <div>
+                    <dt>Problema</dt>
+                    <dd>{project.problem}</dd>
+                  </div>
+                  <div>
+                    <dt>Solução</dt>
+                    <dd>{project.solution}</dd>
+                  </div>
+                  <div>
+                    <dt>Impacto</dt>
+                    <dd>{project.impact}</dd>
+                  </div>
+                </dl>
+                <strong>{project.metric}</strong>
+                <div className="stack-list" aria-label="Tecnologias utilizadas">
+                  {project.stack.map((item) => (
+                    <small key={item}>{item}</small>
+                  ))}
+                </div>
+                <a className="case-link" href={project.href} target="_blank" rel="noreferrer">
+                  Ver projeto <ExternalLink />
+                </a>
+              </div>
+            </motion.article>
+          </AnimatePresence>
+
+          <button
+            className="carousel-button next"
+            type="button"
+            onClick={goNext}
+            aria-label="Ver próximo projeto"
+          >
+            <ArrowRight />
+          </button>
+        </div>
+
+        <div className="carousel-meta">
+          <span>
+            {String(activeIndex + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}
+          </span>
+          <div aria-label="Selecionar projeto">
+            {projects.map((item, index) => (
+              <button
+                key={item.title}
+                type="button"
+                className={index === activeIndex ? "active" : ""}
+                onClick={() => goTo(index)}
+                aria-label={`Ver case ${item.title}`}
+              />
+            ))}
+          </div>
+        </div>
+      </Reveal>
+    </section>
+  );
+}
+
+function WorkModesSection() {
+  const reduceMotion = useReducedMotion();
+
+  const onSectionPointerMove = (event: PointerEvent<HTMLElement>) => {
+    if (reduceMotion || event.pointerType !== "mouse" || window.innerWidth < 821) return;
+
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
+    const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
+
+    event.currentTarget.style.setProperty("--stack-parallax-top-x", `${(x * 7).toFixed(2)}px`);
+    event.currentTarget.style.setProperty("--stack-parallax-top-y", `${(y * 6).toFixed(2)}px`);
+    event.currentTarget.style.setProperty("--stack-parallax-mid-x", `${(x * 5).toFixed(2)}px`);
+    event.currentTarget.style.setProperty("--stack-parallax-mid-y", `${(y * 4).toFixed(2)}px`);
+    event.currentTarget.style.setProperty("--stack-parallax-base-x", `${(x * 3).toFixed(2)}px`);
+    event.currentTarget.style.setProperty("--stack-parallax-base-y", `${(y * 2.5).toFixed(2)}px`);
+  };
+
+  const onSectionPointerLeave = (event: PointerEvent<HTMLElement>) => {
+    event.currentTarget.style.setProperty("--stack-parallax-top-x", "0px");
+    event.currentTarget.style.setProperty("--stack-parallax-top-y", "0px");
+    event.currentTarget.style.setProperty("--stack-parallax-mid-x", "0px");
+    event.currentTarget.style.setProperty("--stack-parallax-mid-y", "0px");
+    event.currentTarget.style.setProperty("--stack-parallax-base-x", "0px");
+    event.currentTarget.style.setProperty("--stack-parallax-base-y", "0px");
+  };
+
+  const copyEase = [0.2, 0.8, 0.2, 1] as const;
+  const viewport = { once: true, margin: "-80px" };
+
+  return (
+    <section
+      className="work-modes-section"
+      onPointerMove={onSectionPointerMove}
+      onPointerLeave={onSectionPointerLeave}
+    >
+      <div className="work-start-head">
+        <div className="section-heading work-mode-heading">
+          <motion.span
+            className="eyebrow"
+            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.55, ease: copyEase }}
+          >
+            Formas de começar
+          </motion.span>
+          <motion.h2
+            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
+            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.68, delay: 0.08, ease: copyEase }}
+          >
+            Uma estrutura para cada momento do negócio.
+          </motion.h2>
+          <motion.p
+            initial={reduceMotion ? false : { opacity: 0, y: 15 }}
+            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={viewport}
+            transition={{ duration: 0.62, delay: 0.16, ease: copyEase }}
+          >
+            O escopo final é personalizado depois do diagnóstico, mas estes são os
+            caminhos mais comuns para iniciar com clareza.
+          </motion.p>
+        </div>
+        <motion.div
+          className="stack-visual"
+          initial={reduceMotion ? false : { opacity: 0, x: 25, scale: 0.97 }}
+          whileInView={reduceMotion ? undefined : { opacity: 1, x: 0, scale: 1 }}
+          viewport={viewport}
+          transition={{ duration: 0.72, delay: 0.18, ease: copyEase }}
+        >
+          <div className="stack-layer top">
+            <Rocket />
+          </div>
+          <div className="stack-layer middle" />
+          <div className="stack-layer base" />
+        </motion.div>
+      </div>
+
+      <div className="work-mode-grid">
+        {workModes.map(({ title, description, icon: Icon, items }, index) => (
+          <Reveal key={title} delay={index * 0.1}>
+            <article>
+              <Icon />
+              <h3>{title}</h3>
+              <p>{description}</p>
+              <ul>
+                {items.map((item) => (
+                  <li key={item}>
+                    <CheckCircle2 />
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <a href="#contato">
+                Conversar sobre isso <ArrowRight />
+              </a>
+            </article>
+          </Reveal>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function ProcessSection() {
+  return (
+    <section id="processo" className="process-section">
+      <Reveal direction="left">
+        <SectionHeading
+          eyebrow="Processo"
+          title="Um caminho simples para decisões melhores."
+          align="center"
+        >
+          A estrutura fica leve para o cliente porque as decisões são organizadas
+          antes, durante e depois do desenvolvimento.
+        </SectionHeading>
+      </Reveal>
+      <Reveal className="timeline" direction="scale" delay={0.08} duration={0.72}>
+        {processSteps.map((step, index) => (
+          <article key={step.title}>
+            <span>{step.number}</span>
+            <i aria-hidden="true" />
+            <h3>{step.title}</h3>
+            <p>{step.description}</p>
+            {index < processSteps.length - 1 && <b aria-hidden="true" />}
+          </article>
+        ))}
+      </Reveal>
+    </section>
+  );
+}
+
+function TechSection() {
+  return (
+    <section className="tech-section">
+      <Reveal direction="left">
+        <span className="eyebrow">Base técnica</span>
+        <h2>A tecnologia aparece como sustentação, não como fantasia.</h2>
+      </Reveal>
+      <Reveal className="tech-list" direction="scale" delay={0.06}>
+        {techs.map((tech) => (
+          <span key={tech}>{tech}</span>
+        ))}
+      </Reveal>
+    </section>
+  );
+}
+
+function ContactSection() {
+  const [service, setService] = useState(quoteServices[0].label);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+
+  const whatsappHref = useMemo(() => {
+    const message = [
+      "Olá, Alessandro! Vim pelo site da AL Tech.",
+      "",
+      `Tenho interesse em: ${service}`,
+      "",
+      `Meu nome é: ${name.trim() || "Não informado"}`,
+      "",
+      "Sobre o projeto:",
+      description.trim() || "Quero conversar para entender o melhor caminho.",
+      "",
+      "Podemos conversar sobre o projeto?",
+    ].join("\n");
+
+    return `${WHATSAPP_URL}?text=${encodeURIComponent(message)}`;
+  }, [description, name, service]);
+
+  return (
+    <section id="contato" className="contact-section">
+      <Reveal className="contact-copy" direction="left">
+        <span className="eyebrow">Vamos conversar?</span>
+        <h2>
+          Conte o momento do seu negócio. A gente transforma isso em direção.
+        </h2>
+        <p>
+          A primeira conversa serve para entender o objetivo, organizar prioridades
+          e indicar o melhor caminho: site, sistema, dashboard, automação ou evolução
+          de algo que já existe.
+        </p>
+        <div className="contact-links">
+          <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
+            <Phone /> {WHATSAPP_DISPLAY}
+          </a>
+          <a href="https://www.instagram.com/altech.dev/" target="_blank" rel="noreferrer">
+            <AtSign /> @altech.dev
+          </a>
+          <a href="mailto:contato.altechdev@gmail.com">
+            <Mail /> contato.altechdev@gmail.com
+          </a>
+          <span>
+            <Clock3 /> Seg - Sex
+          </span>
+        </div>
+      </Reveal>
+
+      <Reveal className="contact-panel" direction="right" delay={0.08}>
+        <div className="solution-picker">
+          <span>Qual solução você precisa?</span>
+          <div>
+            {quoteServices.map(({ label, icon: Icon }) => (
+              <button
+                key={label}
+                type="button"
+                className={service === label ? "selected" : ""}
+                onClick={() => setService(label)}
+              >
+                <Icon />
+                <strong>{label}</strong>
+                {service === label && <Check />}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="contact-fields">
+          <label>
+            Como podemos chamar você?
+            <input
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Seu nome"
+            />
+          </label>
+          <label>
+            Sobre o que é seu projeto?
+            <textarea
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+              placeholder="Ex: quero um sistema com login, clientes, relatórios e automações..."
+            />
+          </label>
+        </div>
+        <a className="primary-button contact-submit" href={whatsappHref} target="_blank" rel="noreferrer">
+          Iniciar conversa <ArrowRight />
+        </a>
+      </Reveal>
+    </section>
+  );
+}
+
+function ChatDock() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
-      role: "bot",
-      text: "Olá.\nSou o ALBot.\nPosso ajudar você a encontrar a melhor solução para seu projeto.",
+      role: "assistant",
+      text: "Olá. Posso te ajudar a entender qual solução combina com o seu projeto.",
     },
   ]);
 
@@ -728,46 +1219,23 @@ function ChatDock({
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase();
-    const hasAny = (terms: string[]) => terms.some((term) => text.includes(term));
-    const wantsWebsite = hasAny([
-      "site",
-      "website",
-      "landing",
-      "pagina",
-      "institucional",
-      "portfolio",
-      "loja virtual",
-      "e-commerce",
-      "ecommerce",
-    ]);
-    const wantsPrice = hasAny(["custa", "preco", "valor", "orcamento"]);
-    const wantsTiming = hasAny(["tempo", "demora", "prazo"]);
 
-    if (wantsWebsite && wantsPrice) {
-      return `Para um site profissional, o investimento depende de paginas, identidade visual, copy, SEO, animacoes e integracoes como WhatsApp, Instagram ou painel administrativo. A AL Tech pode montar uma proposta sob medida pelo WhatsApp ${WHATSAPP_DISPLAY}.`;
+    if (text.includes("site") || text.includes("landing")) {
+      return "Para site ou landing page, vale começar pelo objetivo: vender, apresentar autoridade, captar contatos ou agendar. A AL Tech pode cuidar da estratégia, visual, copy, SEO e integração com WhatsApp.";
     }
-    if (wantsWebsite) {
-      return "Perfeito. A AL Tech pode criar um site moderno, rapido e premium, com estrategia, layout responsivo, SEO, copy, performance e integracao com WhatsApp/Instagram. O proximo passo e entender objetivo, referencias, paginas e prazo para montar uma proposta.";
+
+    if (text.includes("sistema") || text.includes("erp") || text.includes("dashboard")) {
+      return "Para sistemas e dashboards, o primeiro passo é mapear usuários, telas, dados e decisões que precisam ficar mais claras. Depois disso dá para definir uma primeira versão enxuta e evoluir por fases.";
     }
-    if (wantsPrice) {
-      return `O investimento depende do escopo, integrações, telas, prazo e nível de automação. Chame a AL Tech no WhatsApp ${WHATSAPP_DISPLAY} para montarmos uma proposta com mais precisão.`;
+
+    if (text.includes("preco") || text.includes("valor") || text.includes("orçamento") || text.includes("orcamento")) {
+      return `O investimento depende de escopo, telas, integrações e prazo. Para estimar com mais precisão, chame no WhatsApp ${WHATSAPP_DISPLAY} e conte um pouco do projeto.`;
     }
-    if (wantsTiming) {
-      return "Um MVP bem definido pode levar de 2 a 6 semanas. Sistemas maiores costumam seguir por fases: descoberta, protótipo, desenvolvimento, testes e entrega assistida.";
-    }
-    if (hasAny(["cloud", "infra"])) {
-      return "Nossa infraestrutura combina cloud, deploy contínuo, monitoramento, segurança, logs e rollback. A ideia é deixar o sistema rápido, rastreável e fácil de evoluir.";
-    }
-    if (hasAny(["dashboard", "relatorio"])) {
-      return "Criamos dashboards com indicadores, filtros, alertas e visualização clara para decisões. O foco é transformar dado bruto em operação acionável.";
-    }
-    if (hasAny(["governo", "publico"])) {
-      return "Para sistemas governamentais, priorizamos segurança, perfis de acesso, auditoria, acessibilidade, relatórios e estabilidade em produção.";
-    }
-    return `Posso ajudar a identificar a melhor solução para o seu projeto: site premium, sistema web, ERP, dashboard, portal, automação, API ou cloud. Para seguir com um diagnóstico e proposta, fale com a AL Tech pelo WhatsApp ${WHATSAPP_DISPLAY}.`;
+
+    return `Posso orientar entre site, sistema, dashboard, automação, API ou cloud. Para um diagnóstico direto, fale com a AL Tech pelo WhatsApp ${WHATSAPP_DISPLAY}.`;
   };
 
-  const submit = async (event?: React.FormEvent<HTMLFormElement>) => {
+  const submit = async (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     const question = input.trim();
     if (!question || thinking) return;
@@ -785,81 +1253,75 @@ function ChatDock({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: nextMessages.slice(-10),
-          pageContext: botMessage,
+          messages: nextMessages.map((message) => ({
+            role: message.role === "visitor" ? "visitor" : "bot",
+            text: message.text,
+          })),
+          pageContext: "Visitante navegando pelo site da AL Tech",
         }),
       });
       const payload = (await response.json()) as { reply?: string };
       setMessages((current) => [
         ...current,
-        { role: "bot", text: payload.reply || fallbackAnswer(question) },
+        { role: "assistant", text: payload.reply || fallbackAnswer(question) },
       ]);
     } catch {
       setMessages((current) => [
         ...current,
-        { role: "bot", text: fallbackAnswer(question) },
+        { role: "assistant", text: fallbackAnswer(question) },
       ]);
     } finally {
       setThinking(false);
     }
   };
 
-  const openChat = () => {
-    setOpen(true);
-    onOpenMessage("Atendimento aberto. Posso orientar sobre escopo, prazo e orçamento.");
-  };
-
   return (
     <>
       <AnimatePresence>
-        {!open && !muted && (
+        {!open && (
           <motion.button
-            className="bot-bubble"
+            className="chat-bubble"
             type="button"
-            onClick={openChat}
-            initial={{ opacity: 0, y: 18, scale: 0.92 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.96 }}
-            aria-label="Abrir chat com ALBot"
+            onClick={() => setOpen(true)}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            aria-label="Abrir atendimento da AL Tech"
           >
-            <ALBotFigure mood={mood} size="sm" />
-            <span>{botMessage}</span>
+            <MessageCircle />
+            <span>Falar com a AL Tech</span>
           </motion.button>
         )}
       </AnimatePresence>
-
       <AnimatePresence>
         {open && (
           <motion.aside
             className="chat-panel"
-            initial={{ opacity: 0, y: 22, scale: 0.94 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 14, scale: 0.96 }}
-            aria-label="Chat do ALBot"
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            aria-label="Atendimento da AL Tech"
           >
             <div className="chat-header">
               <div>
-                <ALBotFigure mood={mood} size="sm" />
-                <div>
-                  <strong>ALBot</strong>
-                  <span>Assistente virtual</span>
-                </div>
+                <strong>AL Tech</strong>
+                <span>Atendimento consultivo</span>
               </div>
-              <button className="icon-button" onClick={() => setOpen(false)} type="button">
+              <button type="button" onClick={() => setOpen(false)} aria-label="Fechar atendimento">
                 <X />
               </button>
             </div>
             <div className="chat-messages">
               {messages.map((message, index) => (
                 <div key={`${message.role}-${index}`} className={`chat-message ${message.role}`}>
-                  {message.text.split("\n").map((line) => (
-                    <p key={`${line}-${index}`}>{line}</p>
+                  {message.text.split("\n").map((line, lineIndex) => (
+                    <p key={`${index}-${lineIndex}`}>{line}</p>
                   ))}
                 </div>
               ))}
               {thinking && (
-                <div className="chat-message bot thinking">
-                  <p>Estou analisando sua mensagem...</p>
+                <div className="chat-message assistant muted">
+                  <p>Analisando sua mensagem...</p>
                 </div>
               )}
             </div>
@@ -868,7 +1330,7 @@ function ChatDock({
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 placeholder="Digite sua mensagem..."
-                aria-label="Mensagem para o ALBot"
+                aria-label="Mensagem para a AL Tech"
                 disabled={thinking}
               />
               <button type="submit" aria-label="Enviar mensagem" disabled={thinking}>
@@ -882,703 +1344,39 @@ function ChatDock({
   );
 }
 
-function PWARegister() {
-  useEffect(() => {
-    if (process.env.NODE_ENV === "production" && "serviceWorker" in navigator) {
-      navigator.serviceWorker.register("/sw.js").catch(() => undefined);
-    }
-  }, []);
-
-  return null;
-}
-
-function SectionHeading({
-  eyebrow,
-  title,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  children: ReactNode;
-}) {
+function Footer() {
   return (
-    <div className="section-heading">
-      <span>{eyebrow}</span>
-      <h2>{title}</h2>
-      <p>{children}</p>
-    </div>
-  );
-}
-
-function HeroProductShowcase() {
-  const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const target = event.currentTarget;
-    const rect = target.getBoundingClientRect();
-    const px = (event.clientX - rect.left) / rect.width - 0.5;
-    const py = (event.clientY - rect.top) / rect.height - 0.5;
-
-    target.style.setProperty("--tilt-x", `${(-py * 5.5).toFixed(2)}deg`);
-    target.style.setProperty("--tilt-y", `${(px * 7.5).toFixed(2)}deg`);
-    target.style.setProperty("--shine-x", `${event.clientX - rect.left}px`);
-    target.style.setProperty("--shine-y", `${event.clientY - rect.top}px`);
-  };
-
-  const onPointerLeave = (event: ReactPointerEvent<HTMLDivElement>) => {
-    const target = event.currentTarget;
-    target.style.setProperty("--tilt-x", "0deg");
-    target.style.setProperty("--tilt-y", "0deg");
-  };
-
-  return (
-    <div className="product-showcase" onPointerMove={onPointerMove} onPointerLeave={onPointerLeave}>
-      <div className="product-aura" />
-      <div className="product-grid-lines" />
-      <div className="notebook-shell">
-        <div className="notebook-screen">
-          <div className="saas-interface">
-            <aside className="saas-sidebar">
-              <div className="saas-brand">
-                <span>AL</span>
-                <strong>Suite</strong>
-              </div>
-              {["Visão geral", "Produtos", "Clientes", "Projetos", "Relatórios"].map((item, index) => (
-                <span key={item} className={index === 0 ? "active" : ""}>
-                  {item}
-                </span>
-              ))}
-              <div className="saas-health">
-                <small>Cloud</small>
-                <strong>99.9%</strong>
-                <em>operacional</em>
-              </div>
-            </aside>
-            <div className="saas-main">
-              <header className="saas-header">
-                <div>
-                  <span>AL Tech Platform</span>
-                  <strong>Centro de produtos digitais</strong>
-                </div>
-                <div className="saas-search">Buscar modulo...</div>
-                <div className="saas-user">AA</div>
-              </header>
-
-              <div className="saas-metrics">
-                {[
-                  ["Receita", "R$ 128k", "+12%"],
-                  ["Projetos", "24", "+6 ativos"],
-                  ["Usuários", "532", "+18 hoje"],
-                  ["Performance", "100", "score"],
-                ].map(([label, value, trend]) => (
-                  <div className="saas-metric" key={label}>
-                    <span>{label}</span>
-                    <strong>{value}</strong>
-                    <small>{trend}</small>
-                  </div>
-                ))}
-              </div>
-
-              <div className="saas-workspace">
-                <section className="saas-chart-panel">
-                  <div className="panel-title">
-                    <span>Performance geral</span>
-                    <strong>Deploys, acessos e conversões</strong>
-                  </div>
-                  <div className="saas-chart" aria-hidden="true">
-                    {Array.from({ length: 10 }, (_, index) => (
-                      <i key={index} />
-                    ))}
-                    <div className="chart-line" />
-                    <div className="chart-glow" />
-                  </div>
-                </section>
-
-                <aside className="saas-side-stack">
-                  <div className="saas-calendar">
-                    <div>
-                      <span>Agenda</span>
-                      <strong>Julho</strong>
-                    </div>
-                    <div className="calendar-grid">
-                      {Array.from({ length: 21 }, (_, index) => (
-                        <span key={index} className={index === 8 || index === 14 ? "marked" : ""} />
-                      ))}
-                    </div>
-                  </div>
-                  <div className="saas-users">
-                    <span>Equipe ativa</span>
-                    {["Design", "Back-end", "Cloud"].map((item, index) => (
-                      <div key={item}>
-                        <i>{index + 1}</i>
-                        <strong>{item}</strong>
-                        <em>online</em>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="saas-notifications">
-                    <span>Atividades recentes</span>
-                    {["Novo lead recebido", "Build aprovado", "Deploy publicado"].map((item) => (
-                      <strong key={item}>{item}</strong>
-                    ))}
-                  </div>
-                </aside>
-              </div>
-            </div>
-          </div>
-        </div>
+    <footer className="site-footer">
+      <div>
+        <Logo />
+        <p>
+          Sites, sistemas e produtos digitais feitos com estratégia, design e
+          engenharia para negócios que precisam crescer com estrutura.
+        </p>
       </div>
-      <div className="notebook-base" />
-      {productCapabilities.map(({ title, description, icon: Icon, className }, index) => (
-        <motion.div
-          key={title}
-          className={`product-chip ${className}`}
-          initial={{ opacity: 0, y: 18, scale: 0.96 }}
-          animate={{ opacity: 1, y: [0, index % 2 === 0 ? -8 : 8, 0], scale: 1 }}
-          whileHover={{ y: -8, scale: 1.025 }}
-          transition={{
-            opacity: { duration: 0.5, delay: 0.24 + index * 0.08 },
-            scale: { duration: 0.5, delay: 0.24 + index * 0.08 },
-            y: { duration: 5.8 + index * 0.22, repeat: Infinity, ease: "easeInOut" },
-          }}
-        >
-          <span>
-            <Icon />
-          </span>
-          <strong>{title}</strong>
-          <small>{description}</small>
-        </motion.div>
-      ))}
-    </div>
-  );
-}
-
-function HeroTrustMarquee() {
-  const logos = [...trustedCompanies, ...trustedCompanies];
-
-  return (
-    <Reveal className="hero-social-proof" delay={0.2}>
-      <span>Empresas que confiaram na AL Tech</span>
-      <div className="trust-marquee" aria-label="Empresas que confiaram na AL Tech">
-        <motion.div
-          className="trust-marquee-track"
-          animate={{ x: ["0%", "-50%"] }}
-          transition={{ duration: 26, repeat: Infinity, ease: "linear" }}
-        >
-          {logos.map((company, index) => (
-            <div className="trust-logo" key={`${company}-${index}`}>
-              <strong>{company}</strong>
-            </div>
-          ))}
-        </motion.div>
-      </div>
-    </Reveal>
-  );
-}
-
-function ProjectMockup({ title }: { title: string }) {
-  if (title === "Portal Administrativo") {
-    return <AdminPortalMockup />;
-  }
-
-  if (title === "Dashboards Executivos") {
-    return <ExecutiveDashboardMockup />;
-  }
-
-  return (
-    <div className="screen-body">
-      <div className="screen-sidebar" />
-      <div className="screen-chart">
-        {Array.from({ length: 9 }).map((_, itemIndex) => (
-          <span key={itemIndex} style={{ height: `${28 + itemIndex * 7}%` }} />
+      <div>
+        <strong>Navegação</strong>
+        {navItems.map(({ label, href }) => (
+          <a key={label} href={href}>{label}</a>
         ))}
       </div>
-      <div className="screen-cards">
-        <span />
-        <span />
-        <span />
+      <div>
+        <strong>Contato</strong>
+        <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">WhatsApp</a>
+        <a href="https://www.instagram.com/altech.dev/" target="_blank" rel="noreferrer">Instagram</a>
+        <a href="mailto:contato.altechdev@gmail.com">E-mail</a>
       </div>
-    </div>
-  );
-}
-
-function AdminPortalMockup() {
-  return (
-    <div className="project-ui project-admin-ui">
-      <aside>
-        <strong>AL Admin</strong>
-        {["Dashboard", "Usuários", "Permissões", "Relatórios", "Logs"].map((item, index) => (
-          <span key={item} className={index === 0 ? "active" : ""}>
-            {item}
-          </span>
-        ))}
-      </aside>
-      <main>
-        <div className="admin-hero-row">
-          <div>
-            <span>Operação</span>
-            <strong>Portal Administrativo</strong>
-          </div>
-          <em>12 aprovações pendentes</em>
-        </div>
-        <div className="admin-kpis">
-          {[
-            ["Usuários", "248"],
-            ["Permissões", "18"],
-            ["Logs", "1.2k"],
-          ].map(([label, value]) => (
-            <div key={label}>
-              <span>{label}</span>
-              <strong>{value}</strong>
-            </div>
-          ))}
-        </div>
-        <div className="admin-work">
-          <section className="admin-permissions">
-            <span>Gestão de permissões</span>
-            {["Administrador", "Analista", "Operador"].map((item, index) => (
-              <div key={item}>
-                <strong>{item}</strong>
-                <i style={{ width: `${86 - index * 16}%` }} />
-              </div>
-            ))}
-          </section>
-          <section className="admin-calendar">
-            <span>Calendário</span>
-            <div>
-              {Array.from({ length: 21 }).map((_, index) => (
-                <i key={index} className={index === 4 || index === 12 || index === 17 ? "active" : ""} />
-              ))}
-            </div>
-          </section>
-        </div>
-        <div className="admin-bottom">
-          <div>
-            <span>Logs recentes</span>
-            <strong>Login aprovado</strong>
-            <strong>Permissão alterada</strong>
-          </div>
-          <div>
-            <span>Notificações</span>
-            <strong>Novo usuário</strong>
-            <strong>Relatório gerado</strong>
-          </div>
-        </div>
-      </main>
-    </div>
-  );
-}
-
-function ExecutiveDashboardMockup() {
-  return (
-    <div className="project-ui executive-dashboard-ui">
-      <div className="exec-kpis">
-        {[
-          ["Receita", "R$ 1.240.000", "↑ 18%"],
-          ["Atendimentos", "4.382", "tempo real"],
-          ["Pendências", "23", "prioridade"],
-        ].map(([label, value, meta]) => (
-          <div key={label}>
-            <span>{label}</span>
-            <strong>{value}</strong>
-            <small>{meta}</small>
-          </div>
-        ))}
+      <div>
+        <strong>Atendimento</strong>
+        <span>Rio de Janeiro - Brasil</span>
+        <span>Projetos em todo o Brasil</span>
       </div>
-      <div className="exec-grid">
-        <section className="exec-line">
-          <span>Linha de tendência</span>
-          <div>
-            {Array.from({ length: 12 }).map((_, index) => (
-              <i key={index} style={{ height: `${26 + ((index * 19) % 62)}%` }} />
-            ))}
-          </div>
-        </section>
-        <section className="exec-pie">
-          <span>Distribuição</span>
-          <div />
-        </section>
-        <section className="exec-map">
-          <span>Mapa</span>
-          <strong>RJ</strong>
-          <i />
-        </section>
-        <section className="exec-table">
-          <span>Indicadores</span>
-          {["Recebidos", "Resolvidos", "Aguardando"].map((item, index) => (
-            <div key={item}>
-              <strong>{item}</strong>
-              <i style={{ width: `${74 - index * 14}%` }} />
-            </div>
-          ))}
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function SystemsSection() {
-  return (
-    <section id="systems" className="page-section systems-section">
-      <Reveal>
-        <SectionHeading eyebrow="Sistemas" title="Produtos digitais que organizam operação e geram resultado.">
-          A AL Tech constrói interfaces reais para negócios reais: portais, ERPs,
-          CRMs, dashboards, landing pages e sistemas governamentais com clareza,
-          performance e experiência premium.
-        </SectionHeading>
-      </Reveal>
-      <div className="systems-grid">
-        {systemShowcase.map((item, index) => (
-          <Reveal key={item.title} delay={(index % 2) * 0.05}>
-            <TiltCard className={`system-card ${index === 0 ? "system-card-featured" : ""}`}>
-              <div className="system-visual">
-                {item.image ? (
-                  <img src={item.image} alt={`Interface do projeto ${item.title}`} loading="lazy" />
-                ) : (
-                  <div className="system-ui-mock">
-                    <span />
-                    <span />
-                    <span />
-                    <span />
-                  </div>
-                )}
-              </div>
-              <span>{item.category}</span>
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
-              <strong>{item.result}</strong>
-            </TiltCard>
-          </Reveal>
-        ))}
-      </div>
-      <Reveal className="outcome-grid">
-        {outcomeCards.map(([title, description]) => (
-          <div className="outcome-card" key={title}>
-            <CheckCircle2 />
-            <strong>{title}</strong>
-            <span>{description}</span>
-          </div>
-        ))}
-      </Reveal>
-    </section>
-  );
-}
-
-function QuoteWizard({
-  onPrepared,
-}: {
-  onPrepared: () => void;
-}) {
-  const [step, setStep] = useState(0);
-  const [service, setService] = useState("");
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [objective, setObjective] = useState("");
-  const [startMoment, setStartMoment] = useState("");
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const validateService = () => {
-    if (service) {
-      setErrors((current) => {
-        const next = { ...current };
-        delete next.service;
-        return next;
-      });
-      return true;
-    }
-
-    setErrors((current) => ({
-      ...current,
-      service: "Escolha uma solução para continuar.",
-    }));
-    return false;
-  };
-
-  const validateDetails = () => {
-    const nextErrors: Record<string, string> = {};
-    if (!name.trim()) nextErrors.name = "Informe seu nome para continuarmos.";
-    if (!description.trim()) nextErrors.description = "Conte um pouco sobre o projeto.";
-    setErrors(nextErrors);
-    return Object.keys(nextErrors).length === 0;
-  };
-
-  const nextStep = () => {
-    if (step === 0 && !validateService()) return;
-    if (step === 1 && !validateDetails()) return;
-    setStep((current) => Math.min(current + 1, 2));
-  };
-
-  const summary = {
-    service,
-    name: name.trim(),
-    description: description.trim(),
-    objective: objective || "Ainda quero definir",
-    startMoment: startMoment || "Ainda estou planejando",
-  };
-
-  const whatsappMessage = [
-    "Olá, Alessandro! Vim pelo site da AL Tech.",
-    "",
-    `Meu nome é: ${summary.name}`,
-    "",
-    "Tenho interesse em:",
-    summary.service,
-    "",
-    "Sobre o projeto:",
-    summary.description,
-    "",
-    "Principal objetivo:",
-    summary.objective,
-    "",
-    "Quando gostaria de iniciar:",
-    summary.startMoment,
-    "",
-    "Podemos conversar sobre o projeto?",
-  ].join("\n");
-
-  const whatsappHref = `${WHATSAPP_URL}?text=${encodeURIComponent(whatsappMessage)}`;
-
-  return (
-    <div className="quote-panel liquid-card">
-      <div className="quote-progress" aria-label="Progresso da solicitação">
-        {["Serviço", "Detalhes", "Revisão"].map((label, index) => (
-          <button
-            key={label}
-            type="button"
-            className={index === step ? "active" : index < step ? "done" : ""}
-            onClick={() => {
-              if (index === 0 || (index === 1 && service) || (index === 2 && service && validateDetails())) {
-                setStep(index);
-              }
-            }}
-          >
-            <span>{index + 1}</span>
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <AnimatePresence mode="wait">
-        {step === 0 && (
-          <motion.div
-            key="service"
-            className="quote-step"
-            initial={{ opacity: 0, x: 18, filter: "blur(10px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -18, filter: "blur(10px)" }}
-            transition={{ duration: 0.28 }}
-          >
-            <div className="quote-step-heading">
-              <span>Etapa 1</span>
-              <h3>Qual solução você precisa?</h3>
-              <p>Selecione uma opção para eu preparar o contexto do orçamento.</p>
-            </div>
-            <div className="quote-service-grid">
-              {quoteServices.map(({ label, icon: Icon }) => {
-                const selected = service === label;
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    className={selected ? "selected" : ""}
-                    onClick={() => {
-                      setService(label);
-                      setErrors((current) => {
-                        const next = { ...current };
-                        delete next.service;
-                        return next;
-                      });
-                    }}
-                  >
-                    <Icon />
-                    <strong>{label}</strong>
-                    <span />
-                  </button>
-                );
-              })}
-            </div>
-            {errors.service && <p className="field-error">{errors.service}</p>}
-            <div className="quote-actions">
-              <button className="primary-button" type="button" onClick={nextStep}>
-                Continuar <ArrowRight />
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {step === 1 && (
-          <motion.div
-            key="details"
-            className="quote-step quote-conversation"
-            initial={{ opacity: 0, x: 18, filter: "blur(10px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -18, filter: "blur(10px)" }}
-            transition={{ duration: 0.28 }}
-          >
-            <div className="quote-step-heading">
-              <span>Etapa 2</span>
-              <h3>Conte um pouco sobre seu projeto.</h3>
-              <p>Vou transformar sua ideia em uma mensagem clara para o WhatsApp.</p>
-            </div>
-
-            <div className="quote-dialog">
-              <div className="quote-prompt compact">
-                <div>
-                  <ALBotFigure mood="contact" size="sm" />
-                </div>
-                <span>Como podemos chamar você?</span>
-                <label>
-                  <input
-                    value={name}
-                    onChange={(event) => {
-                      setName(event.target.value);
-                      if (event.target.value.trim()) {
-                        setErrors((current) => {
-                          const next = { ...current };
-                          delete next.name;
-                          return next;
-                        });
-                      }
-                    }}
-                    placeholder="Seu nome"
-                    aria-invalid={Boolean(errors.name)}
-                  />
-                  {errors.name && <small>{errors.name}</small>}
-                </label>
-              </div>
-
-              <div className="quote-prompt">
-                <span>Sobre o que é seu projeto?</span>
-                <label>
-                  <textarea
-                    value={description}
-                    onChange={(event) => {
-                      setDescription(event.target.value);
-                      if (event.target.value.trim()) {
-                        setErrors((current) => {
-                          const next = { ...current };
-                          delete next.description;
-                          return next;
-                        });
-                      }
-                    }}
-                    placeholder="Ex: quero um sistema com login, dashboard, clientes, relatórios e automações..."
-                    aria-invalid={Boolean(errors.description)}
-                  />
-                  {errors.description && <small>{errors.description}</small>}
-                </label>
-              </div>
-
-              <div className="quote-prompt">
-                <span>Qual é o principal objetivo?</span>
-                <div className="quote-objective-grid">
-                  {projectObjectives.map(({ label, icon: Icon }) => (
-                    <button
-                      key={label}
-                      type="button"
-                      className={objective === label ? "selected" : ""}
-                      onClick={() => setObjective(label)}
-                    >
-                      <Icon />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="quote-prompt compact">
-                <span>Quando gostaria de iniciar?</span>
-                <div className="quote-urgency-grid">
-                  {startOptions.map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    className={startMoment === item ? "selected" : ""}
-                    onClick={() => setStartMoment(item)}
-                  >
-                    {item}
-                  </button>
-                ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="quote-actions split">
-              <button className="ghost-button" type="button" onClick={() => setStep(0)}>
-                Voltar
-              </button>
-              <button className="primary-button" type="button" onClick={nextStep}>
-                Revisar <ArrowRight />
-              </button>
-            </div>
-          </motion.div>
-        )}
-
-        {step === 2 && (
-          <motion.div
-            key="review"
-            className="quote-step"
-            initial={{ opacity: 0, x: 18, filter: "blur(10px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -18, filter: "blur(10px)" }}
-            transition={{ duration: 0.28 }}
-          >
-            <div className="quote-step-heading">
-              <span>Etapa 3</span>
-              <h3>Revise antes de abrir o WhatsApp.</h3>
-              <p>A mensagem será enviada pronta para uma conversa mais objetiva.</p>
-            </div>
-            <div className="quote-summary">
-              {[
-                ["Serviço escolhido", summary.service],
-                ["Nome", summary.name],
-                ["Descrição", summary.description],
-                ["Objetivo", summary.objective],
-                ["Início", summary.startMoment],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
-              ))}
-            </div>
-            <div className="quote-preview">
-              <span>Mensagem preparada</span>
-              <p>{whatsappMessage}</p>
-            </div>
-            <div className="quote-actions split">
-              <button className="ghost-button" type="button" onClick={() => setStep(1)}>
-                Voltar e editar
-              </button>
-              <a
-                className="primary-button whatsapp-button"
-                href={whatsappHref}
-                target="_blank"
-                rel="noreferrer"
-                onClick={onPrepared}
-              >
-                <span className="whatsapp-mark">W</span>
-                Continuar no WhatsApp
-              </a>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+      <small>© 2026 AL Tech. Todos os direitos reservados.</small>
+    </footer>
   );
 }
 
 export function HomeExperience() {
-  const mainRef = useRef<HTMLDivElement | null>(null);
-  const [botMood, setBotMood] = useState<ALBotMood>("home");
-  const [botMessage, setBotMessage] = useState("Precisa de uma solução digital? Posso ajudar.");
-  const [devOpen, setDevOpen] = useState(false);
-  const [navOpen, setNavOpen] = useState(false);
-  const [contactActive, setContactActive] = useState(false);
-  const [testimonialsActive, setTestimonialsActive] = useState(false);
-  const logoClicks = useRef(0);
-  const logoTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { scrollYProgress } = useScroll({ target: mainRef });
-  const heroY = useTransform(scrollYProgress, [0, 0.22], [0, 110]);
-
   const jsonLd = useMemo(
     () => ({
       "@context": "https://schema.org",
@@ -1587,7 +1385,7 @@ export function HomeExperience() {
       url: "https://altechweb.com.br",
       logo: "https://altechweb.com.br/favicon.svg",
       description:
-        "Desenvolvimento de sistemas web, automações, dashboards, cloud, infraestrutura e consultoria tecnológica.",
+        "Desenvolvimento de sites, sistemas, plataformas web, dashboards, automações e infraestrutura cloud.",
       sameAs: ["https://www.instagram.com/altech.dev/"],
       founder: {
         "@type": "Person",
@@ -1608,605 +1406,26 @@ export function HomeExperience() {
     [],
   );
 
-  useEffect(() => {
-    const root = document.documentElement;
-    const onPointerMove = (event: PointerEvent) => {
-      const x = event.clientX;
-      const y = event.clientY;
-      const lookX = ((x / window.innerWidth) - 0.5) * 10;
-      const lookY = ((y / window.innerHeight) - 0.5) * 7;
-      root.style.setProperty("--mx", `${x}px`);
-      root.style.setProperty("--my", `${y}px`);
-      root.style.setProperty("--look-x", `${lookX.toFixed(2)}px`);
-      root.style.setProperty("--look-y", `${lookY.toFixed(2)}px`);
-    };
-
-    window.addEventListener("pointermove", onPointerMove);
-    return () => window.removeEventListener("pointermove", onPointerMove);
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    let context: { revert: () => void } | undefined;
-
-    const loadMotion = async () => {
-      const [{ default: gsap }, { ScrollTrigger }] = await Promise.all([
-        import("gsap"),
-        import("gsap/ScrollTrigger"),
-      ]);
-      if (!active) return;
-      gsap.registerPlugin(ScrollTrigger);
-      context = gsap.context(() => {
-        gsap.utils.toArray<HTMLElement>(".float-layer").forEach((layer, index) => {
-          gsap.to(layer, {
-            yPercent: index % 2 === 0 ? -8 : 8,
-            ease: "none",
-            scrollTrigger: {
-              trigger: layer,
-              start: "top bottom",
-              end: "bottom top",
-              scrub: 1.2,
-            },
-          });
-        });
-      }, mainRef);
-    };
-
-    void loadMotion();
-
-    return () => {
-      active = false;
-      context?.revert();
-    };
-  }, []);
-
-  useEffect(() => {
-    let buffer = "";
-    const onKeyDown = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (target?.closest("input, textarea, [contenteditable='true']")) return;
-      buffer = `${buffer}${event.key.toLowerCase()}`.slice(-6);
-      if (buffer.includes("altech")) {
-        setDevOpen(true);
-        setBotMood("developer");
-        setBotMessage("Você encontrou o modo desenvolvedor.");
-      }
-    };
-
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
-
-  useEffect(() => {
-    const contact = document.querySelector("#contact");
-    if (!contact) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setContactActive(Boolean(entry?.isIntersecting)),
-      { threshold: 0.22 },
-    );
-    observer.observe(contact);
-    return () => observer.disconnect();
-  }, []);
-
-  useEffect(() => {
-    const testimonialsSection = document.querySelector(".testimonials-section");
-    if (!testimonialsSection) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setTestimonialsActive(Boolean(entry?.isIntersecting)),
-      { threshold: 0.28 },
-    );
-    observer.observe(testimonialsSection);
-    return () => observer.disconnect();
-  }, []);
-
-  const onLogoClick = () => {
-    logoClicks.current += 1;
-    if (logoTimer.current) clearTimeout(logoTimer.current);
-    logoTimer.current = setTimeout(() => {
-      logoClicks.current = 0;
-    }, 1300);
-    if (logoClicks.current >= 5) {
-      logoClicks.current = 0;
-      setDevOpen(true);
-      setBotMood("developer");
-      setBotMessage("Você encontrou o modo desenvolvedor.");
-    }
-  };
-
   return (
-    <main ref={mainRef} className="site-shell">
+    <main className="site-shell">
       <PWARegister />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-
-      <div className="mouse-glow" aria-hidden="true" />
-      <CommandMap />
-
-      <header className="site-nav">
-        <Logo onClick={onLogoClick} />
-        <nav className={navOpen ? "open" : ""} aria-label="Navegação principal">
-          {navItems.map(([label, href]) => (
-            <a key={label} href={href} onClick={() => setNavOpen(false)}>
-              {label}
-            </a>
-          ))}
-        </nav>
-        <div className="nav-actions">
-          <a className="nav-quote" href="#contact">
-            Orçamento
-          </a>
-          <button
-            className="icon-button nav-menu"
-            type="button"
-            onClick={() => setNavOpen((value) => !value)}
-            aria-label="Abrir menu"
-          >
-            <Menu />
-          </button>
-        </div>
-      </header>
-
-      <section id="home" className="hero-section">
-        <motion.div className="hero-orbit float-layer" style={{ y: heroY }} />
-        <div className="hero-content">
-          <Reveal className="hero-copy">
-            <div className="hero-kicker">
-              <span />
-              Desenvolvimento de produtos digitais
-            </div>
-            <h1>
-              Sistemas, websites e plataformas que <span>impulsionam negócios.</span>
-            </h1>
-            <p>
-              A AL Tech projeta, desenvolve, implanta e mantém soluções digitais completas
-              para empresas que precisam de design, tecnologia, segurança e escala.
-            </p>
-            <div className="hero-actions">
-              <a className="primary-button magnet-button" href="#projects">
-                Ver Projetos <ArrowRight />
-              </a>
-              <a className="ghost-button magnet-button" href="#contact">
-                Solicitar Orçamento <ChevronRight />
-              </a>
-            </div>
-            <div className="status-strip">
-              {heroFeatures.map(({ label, icon: Icon }) => (
-                <span key={label}>
-                  <Icon /> {label}
-                </span>
-              ))}
-            </div>
-          </Reveal>
-
-          <Reveal className="hero-stage" delay={0.12}>
-            <HeroProductShowcase />
-          </Reveal>
-        </div>
-        <HeroTrustMarquee />
-      </section>
-
-      <section id="about" className="page-section founder-section">
-        <Reveal className="founder-grid">
-          <TiltCard className="founder-portrait-card">
-            <div className="founder-photo-frame">
-              <img src="/alessandro-araujo.jpg" alt="Retrato de Alessandro Araujo" />
-            </div>
-            <div className="founder-photo-meta">
-              <span>Alessandro Araujo</span>
-              <strong>Fundador / Desenvolvedor</strong>
-            </div>
-          </TiltCard>
-          <div className="founder-copy">
-            <span>Por trás da AL Tech</span>
-            <h2>Uma empresa de tecnologia com rosto, estratégia e responsabilidade.</h2>
-            <p>
-              Sou Alessandro Araujo, fundador da AL Tech. Minha missão é transformar
-              ideias em sites, sistemas e automações com visual premium, performance
-              real e estrutura pronta para crescer.
-            </p>
-            <p>
-              A AL Tech nasce dessa mistura entre design, código limpo e visão de
-              negócio: tecnologia bonita por fora, sólida por dentro e simples de usar
-              para quem precisa operar todos os dias.
-            </p>
-            <div className="founder-highlights">
-              <span>
-                <Code2 /> Desenvolvimento sob medida
-              </span>
-              <span>
-                <ShieldCheck /> Entrega segura e organizada
-              </span>
-              <span>
-                <Sparkles /> Experiência premium e humana
-              </span>
-            </div>
-            <div className="founder-actions">
-              <a className="primary-button magnet-button" href="#projects">
-                Ver projetos <ArrowRight />
-              </a>
-              <a className="ghost-button magnet-button" href={WHATSAPP_URL} target="_blank" rel="noreferrer">
-                Falar com Alessandro <ChevronRight />
-              </a>
-            </div>
-          </div>
-        </Reveal>
-      </section>
-
-      <SystemsSection />
-
-      <section id="services" className="page-section">
-        <Reveal>
-          <SectionHeading eyebrow="Serviços" title="Cada entrega resolve um problema de negócio.">
-            O foco não é acumular tecnologia. É criar produtos digitais que reduzem
-            atrito, aumentam controle, melhoram a percepção da marca e ajudam a operação a crescer.
-          </SectionHeading>
-        </Reveal>
-        <div className="services-grid">
-          {services.map((service, index) => {
-            const Icon = service.icon;
-            return (
-              <Reveal key={service.title} delay={(index % 4) * 0.04}>
-                <TiltCard className="service-card">
-                  <div className="service-card-head">
-                    <Icon />
-                    <span>{service.result}</span>
-                  </div>
-                  <h3>{service.title}</h3>
-                  <p>{service.description}</p>
-                  <div className="service-proof">
-                    <small>Resolve</small>
-                    <strong>{service.problem}</strong>
-                  </div>
-                </TiltCard>
-              </Reveal>
-            );
-          })}
-        </div>
-      </section>
-
-      <section id="projects" className="page-section">
-        <Reveal>
-          <SectionHeading eyebrow="Cases" title="Projetos tratados como produto, não como peça de portfólio.">
-            Cada entrega começa com um problema concreto, passa por estratégia,
-            interface e desenvolvimento, e termina em impacto mensurável para o negócio.
-          </SectionHeading>
-        </Reveal>
-        <div className="project-carousel case-grid">
-          {projects.map((project, index) => (
-            <Reveal key={project.title} delay={index * 0.08}>
-              <TiltCard className={`project-card project-${project.accent}`}>
-                <div className="project-screen">
-                  <div className="screen-topbar">
-                    <span />
-                    <span />
-                    <span />
-                    <strong>{project.title}</strong>
-                  </div>
-                  {project.image ? (
-                    <img
-                      className="project-shot"
-                      src={project.image}
-                      alt={`Screenshot do projeto ${project.title}`}
-                      loading="lazy"
-                    />
-                  ) : (
-                    <ProjectMockup title={project.title} />
-                  )}
-                </div>
-                <span className="project-tag">{project.tag}</span>
-                <h3>{project.title}</h3>
-                <p>{project.description}</p>
-                <div className="case-breakdown">
-                  <div>
-                    <span>Problema</span>
-                    <p>{project.problem}</p>
-                  </div>
-                  <div>
-                    <span>Solução</span>
-                    <p>{project.solution}</p>
-                  </div>
-                  <div>
-                    <span>Impacto</span>
-                    <p>{project.impact}</p>
-                  </div>
-                </div>
-                <ul>
-                  {project.results.map((result) => (
-                    <li key={result}>
-                      <CheckCircle2 /> {result}
-                    </li>
-                  ))}
-                </ul>
-                <div className="project-footer">
-                  <div>
-                    <strong>{project.metric}</strong>
-                    {project.stack.map((item) => (
-                      <span key={item}>{item}</span>
-                    ))}
-                  </div>
-                  <a
-                    href={project.href}
-                    target={project.href.startsWith("http") ? "_blank" : undefined}
-                    rel={project.href.startsWith("http") ? "noreferrer" : undefined}
-                  >
-                    {project.href.startsWith("http") ? "Ver projeto" : "Detalhes"} <ExternalLink />
-                  </a>
-                </div>
-              </TiltCard>
-            </Reveal>
-          ))}
-        </div>
-      </section>
-
-      <section className="numbers-section" aria-label="Números da AL Tech">
-        <Reveal className="numbers-grid">
-          <MetricCounter value={10} prefix="+" label="Projetos concluídos" />
-          <MetricCounter value={100} suffix="%" label="Foco em entrega sob medida" />
-          <MetricCounter value={11} label="Frentes de solução digital" />
-          <MetricCounter value={99.9} suffix="%" decimals={1} label="Disponibilidade como meta" />
-          <MetricCounter value={5} prefix="+" label="Segmentos atendidos" />
-        </Reveal>
-      </section>
-
-      <section id="technologies" className="page-section tech-section">
-        <Reveal>
-          <SectionHeading eyebrow="Tecnologias" title="Stack moderna, escolhida para sustentar bons produtos.">
-            A tecnologia aparece como base de confiança: performance, segurança,
-            manutenção e evolução contínua para sites, sistemas e plataformas web.
-          </SectionHeading>
-        </Reveal>
-        <Reveal className="tech-wall tech-wall-compact">
-          {techs.map(([name, initials, description], index) => (
-            <TiltCard key={name} className="tech-tile">
-              <div className="tech-orb" style={{ animationDelay: `${index * 90}ms` }}>
-                {initials}
-              </div>
-              <strong>{name}</strong>
-              <span>{description}</span>
-            </TiltCard>
-          ))}
-        </Reveal>
-      </section>
-
-      <section id="process" className="page-section process-section">
-        <Reveal>
-          <SectionHeading eyebrow="Método" title="Do primeiro contato ao sistema em produção.">
-            Um processo claro, visual e organizado para transformar ideia em entrega
-            sem perder sofisticação pelo caminho.
-          </SectionHeading>
-        </Reveal>
-        <Reveal className="process-timeline">
-          {processSteps.map(([number, title, description], index) => (
-            <div className="process-step" key={title}>
-              <div>
-                {index === 0 ? <MessageSquare /> : index === 5 ? <Rocket /> : <Waypoints />}
-              </div>
-              <span>{number}</span>
-              <strong>{title}</strong>
-              <p>{description}</p>
-            </div>
-          ))}
-        </Reveal>
-      </section>
-
-      <section className="page-section testimonials-section">
-        <Reveal>
-          <SectionHeading eyebrow="Confiança" title="O que nossos clientes dizem.">
-            Mais do que elogios: sinais de clareza, organização, acabamento e impacto
-            percebido em projetos digitais reais.
-          </SectionHeading>
-        </Reveal>
-        <TestimonialSlider />
-      </section>
-
-      <section id="contact" className="contact-section">
-        <Reveal className="contact-grid">
-          <div className="contact-copy">
-            <span>Solicitação de orçamento</span>
-            <h2>Vamos tirar sua ideia do papel?</h2>
-            <p>
-              Uma triagem rápida, consultiva e direta. Você escolhe a solução,
-              conta sua ideia e recebe uma conversa pronta para falar com a AL Tech.
-            </p>
-            <div className="contact-flow">
-              {[
-                "Escolha a solução.",
-                "Conte sua ideia.",
-                "Receba uma conversa pronta no WhatsApp.",
-                "Nós analisamos seu projeto.",
-                "Você recebe uma proposta personalizada.",
-              ].map((item, index) => (
-                <div key={item}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <strong>{item}</strong>
-                </div>
-              ))}
-            </div>
-            <div className="contact-direct">
-              <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
-                <Phone /> {WHATSAPP_DISPLAY}
-              </a>
-              <a href="https://www.instagram.com/altech.dev/" target="_blank" rel="noreferrer">
-                <AtSign /> @altech.dev
-              </a>
-              <span>
-                <Globe2 /> Remoto - Brasil
-              </span>
-              <span>
-                <Clock3 /> Seg - Sex
-              </span>
-            </div>
-            <div className="contact-bot-note">
-              <ALBotFigure mood="contact" size="sm" />
-              <span>Escolha uma solução e eu preparo sua conversa com a AL Tech.</span>
-            </div>
-          </div>
-          <QuoteWizard
-            onPrepared={() => {
-              setBotMood("contact");
-              setBotMessage("Mensagem preparada para o WhatsApp. Agora é só continuar a conversa.");
-            }}
-          />
-        </Reveal>
-      </section>
-
-      <footer className="site-footer">
-        <div className="digital-city" aria-hidden="true">
-          {["Sistemas", "Web", "ERP", "Dados", "API", "Cloud", "BI"].map((label, index) => (
-            <div
-              className="city-building"
-              key={label}
-              style={{ "--h": `${72 + (index % 4) * 34}px` } as React.CSSProperties}
-            >
-              <span>{label}</span>
-              {Array.from({ length: 12 }).map((_, windowIndex) => (
-                <i key={windowIndex} />
-              ))}
-            </div>
-          ))}
-        </div>
-        <div className="footer-trust">
-          {trustBadges.map((badge) => (
-            <span key={badge}>
-              <CheckCircle2 /> {badge}
-            </span>
-          ))}
-        </div>
-        <div className="footer-grid">
-          <div>
-            <Logo compact />
-            <p>Transformando ideias em soluções digitais de alto impacto.</p>
-            <div className="footer-socials">
-              <a href={WHATSAPP_URL} target="_blank" rel="noreferrer" aria-label="WhatsApp da AL Tech">
-                <Phone />
-              </a>
-              <a href="https://www.instagram.com/altech.dev/" target="_blank" rel="noreferrer" aria-label="Instagram da AL Tech">
-                <AtSign />
-              </a>
-              <a href="mailto:contato.altechdev@gmail.com" aria-label="E-mail da AL Tech">
-                <Mail />
-              </a>
-            </div>
-          </div>
-          <div>
-            <strong>Navegação</strong>
-            {navItems.map(([label, href]) => (
-              <a key={label} href={href}>
-                {label}
-              </a>
-            ))}
-          </div>
-          <div>
-            <strong>Serviços</strong>
-            {services.slice(0, 5).map((service) => (
-              <a key={service.title} href="#services">
-                {service.title}
-              </a>
-            ))}
-          </div>
-          <div>
-            <strong>Legal</strong>
-            <a href="#home">Política de Privacidade</a>
-            <a href="#home">Termos de Uso</a>
-          </div>
-        </div>
-        <div className="footer-bottom">
-          <span>© 2026 AL Tech. Todos os direitos reservados.</span>
-          <span>Desenvolvido com estratégia, código limpo e tecnologia.</span>
-        </div>
-      </footer>
-
-      <ChatDock
-        mood={botMood}
-        botMessage={botMessage}
-        onOpenMessage={(message) => setBotMessage(message)}
-        muted={contactActive || testimonialsActive}
-      />
-      <DeveloperConsole open={devOpen} onClose={() => setDevOpen(false)} />
+      <Header />
+      <HeroSection />
+      <TrustStrip />
+      <ProblemSection />
+      <AboutSection />
+      <ServicesSection />
+      <ProjectCarousel />
+      <WorkModesSection />
+      <ProcessSection />
+      <TechSection />
+      <ContactSection />
+      <Footer />
+      <ChatDock />
     </main>
-  );
-}
-
-function TestimonialSlider() {
-  const [index, setIndex] = useState(0);
-  const active = testimonials[index];
-
-  useEffect(() => {
-    const interval = setInterval(
-      () => setIndex((current) => (current + 1) % testimonials.length),
-      4200,
-    );
-    return () => clearInterval(interval);
-  }, []);
-
-  return (
-    <Reveal className="testimonial-shell">
-      <div className="testimonial-feature">
-        <AnimatePresence mode="wait">
-          <motion.div
-            className="testimonial-card"
-            key={index}
-            initial={{ opacity: 0, x: 34, filter: "blur(12px)" }}
-            animate={{ opacity: 1, x: 0, filter: "blur(0px)" }}
-            exit={{ opacity: 0, x: -34, filter: "blur(12px)" }}
-            transition={{ duration: 0.45 }}
-          >
-            <div className="testimonial-top">
-              <span>{active.initials}</span>
-              <div>
-                <strong>{active.author}</strong>
-                <small>{active.role}</small>
-              </div>
-              <Sparkles />
-            </div>
-            <p>“{active.quote}”</p>
-            <div className="testimonial-meta">
-              <span>{active.project}</span>
-              <span>{active.result}</span>
-              <span>{active.metric}</span>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-        <div className="testimonial-proof">
-          <span>O que costuma aparecer nas entregas</span>
-          {testimonialSignals.map(([title, description]) => (
-            <div key={title}>
-              <CheckCircle2 />
-              <strong>{title}</strong>
-              <small>{description}</small>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="testimonial-dots">
-        {testimonials.map((testimonial, dotIndex) => (
-          <button
-            key={testimonial.author}
-            className={dotIndex === index ? "active" : ""}
-            type="button"
-            onClick={() => setIndex(dotIndex)}
-            aria-label={`Ver depoimento ${dotIndex + 1}`}
-          />
-        ))}
-      </div>
-      <div className="testimonial-mini-grid">
-        {testimonials.slice(0, 4).map((testimonial, testimonialIndex) => (
-          <button
-            key={`${testimonial.author}-${testimonial.project}`}
-            type="button"
-            className={testimonialIndex === index ? "active" : ""}
-            onClick={() => setIndex(testimonialIndex)}
-          >
-            <span>{testimonial.initials}</span>
-            <strong>{testimonial.project}</strong>
-            <small>{testimonial.result}</small>
-          </button>
-        ))}
-      </div>
-    </Reveal>
   );
 }
