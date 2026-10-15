@@ -50,6 +50,10 @@ Framework: `Next.js`
 Branch: `main`
 Diretorio de saida: `.next`
 
+O build de producao usa Webpack para permitir o fallback WebAssembly do Next.js
+em servidores Linux sem a versao de glibc exigida pelo compilador nativo.
+O arquivo `next.config.mjs` evita a transpilacao da configuracao em TypeScript.
+
 ## Variaveis de ambiente
 
 Crie as variaveis no painel da hospedagem. Nao envie `.env.local` para o GitHub.
