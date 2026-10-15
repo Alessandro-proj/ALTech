@@ -1,14 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Geist_Mono, Inter, Manrope } from "next/font/google";
+import { Bricolage_Grotesque, DM_Sans, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const dmSans = DM_Sans({
   variable: "--font-body",
   subsets: ["latin"],
   display: "swap",
 });
 
-const manrope = Manrope({
+const bricolage = Bricolage_Grotesque({
   variable: "--font-heading",
   subsets: ["latin"],
   display: "swap",
@@ -84,8 +84,9 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
-  themeColor: "#05070D",
-  colorScheme: "dark",
+  viewportFit: "cover",
+  themeColor: "#060E22",
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -95,7 +96,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${inter.variable} ${manrope.variable} ${geistMono.variable}`}>
+      <body className={`${dmSans.variable} ${bricolage.variable} ${geistMono.variable}`}>
+        <noscript>
+          <style>{`.reveal, .hero-copy > *, .hero-word > span { opacity: 1 !important; transform: none !important; }`}</style>
+        </noscript>
         {children}
       </body>
     </html>

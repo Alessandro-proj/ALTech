@@ -1,49 +1,42 @@
 "use client";
 
 import {
-  ArrowLeft,
   ArrowRight,
   AtSign,
-  BadgeCheck,
-  BriefcaseBusiness,
-  Cable,
-  ChartNoAxesCombined,
+  BarChart3,
+  Blocks,
   Check,
   CheckCircle2,
   Clock3,
   Cloud,
   Code2,
-  Database,
   ExternalLink,
   Globe2,
-  Headphones,
-  Home,
-  LayoutGrid,
   Mail,
   Menu,
   MessageCircle,
   MonitorSmartphone,
-  PencilLine,
+  Pause,
   Phone,
-  Rocket,
+  Play,
   Send,
   ShieldCheck,
   ShoppingBag,
   Sparkles,
-  Target,
-  UserRound,
   Workflow,
   X,
-  Zap,
   type LucideIcon,
 } from "lucide-react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "framer-motion";
 import Image from "next/image";
+import Link from "next/link";
 import {
-  type ReactNode,
+  Fragment,
+  type CSSProperties,
   type FormEvent,
+  type KeyboardEvent as ReactKeyboardEvent,
   type PointerEvent,
-  type TouchEvent,
+  type ReactNode,
   useEffect,
   useMemo,
   useRef,
@@ -53,8 +46,9 @@ import {
 type Service = {
   title: string;
   description: string;
+  detail: string;
   icon: LucideIcon;
-  proof: string;
+  size: "large" | "medium" | "small" | "wide";
 };
 
 type ProjectItem = {
@@ -65,9 +59,10 @@ type ProjectItem = {
   solution: string;
   impact: string;
   metric: string;
-  stack: string[];
-  href: string;
+  metricLabel: string;
+  href?: string;
   image: string;
+  accent: string;
 };
 
 type ChatMessage = {
@@ -75,195 +70,188 @@ type ChatMessage = {
   text: string;
 };
 
-const WHATSAPP_NUMBER = "5521972714119";
-const WHATSAPP_DISPLAY = "+55 21 97271-4119";
+const WHATSAPP_NUMBER = "5521971266237";
+const WHATSAPP_DISPLAY = "+55 21 97126-6237";
 const WHATSAPP_URL = `https://wa.me/${WHATSAPP_NUMBER}`;
+const CONTACT_EMAIL_USER = "contato.altechdev";
+const CONTACT_EMAIL_DOMAIN = "gmail.com";
+const CONTACT_EMAIL = `${CONTACT_EMAIL_USER}@${CONTACT_EMAIL_DOMAIN}`;
+const CONTACT_EMAIL_URL = `mailto:${CONTACT_EMAIL_USER}%40${CONTACT_EMAIL_DOMAIN}`;
+
+const onMagneticMove = (event: PointerEvent<HTMLAnchorElement>) => {
+  if (
+    event.pointerType !== "mouse" ||
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) return;
+  const bounds = event.currentTarget.getBoundingClientRect();
+  event.currentTarget.style.setProperty("--button-x", `${(event.clientX - bounds.left - bounds.width / 2) * 0.18}px`);
+  event.currentTarget.style.setProperty("--button-y", `${(event.clientY - bounds.top - bounds.height / 2) * 0.3}px`);
+};
+
+const onMagneticLeave = (event: PointerEvent<HTMLAnchorElement>) => {
+  event.currentTarget.style.setProperty("--button-x", "0px");
+  event.currentTarget.style.setProperty("--button-y", "0px");
+};
 
 const navItems = [
-  { label: "Sobre", href: "#sobre", icon: Home },
-  { label: "Serviços", href: "#servicos", icon: LayoutGrid },
-  { label: "Projetos", href: "#projetos", icon: BriefcaseBusiness },
-  { label: "Processo", href: "#processo", icon: Workflow },
-  { label: "Contato", href: "#contato", icon: Mail },
+  { label: "Projetos", href: "#projetos" },
+  { label: "Serviços", href: "#servicos" },
+  { label: "Processo", href: "#processo" },
+  { label: "A AL Tech", href: "#sobre" },
+  { label: "Contato", href: "#contato" },
 ] as const;
 
-const heroHighlights: { title: string; text: string; icon: LucideIcon }[] = [
-  {
-    title: "Segurança",
-    text: "Seus dados protegidos com as melhores práticas",
-    icon: ShieldCheck,
-  },
-  {
-    title: "Design responsivo",
-    text: "Experiência perfeita em qualquer dispositivo",
-    icon: MonitorSmartphone,
-  },
-  {
-    title: "Performance",
-    text: "Sites rápidos, otimizados e eficientes",
-    icon: Zap,
-  },
-  {
-    title: "Suporte próximo",
-    text: "Acompanhamento e suporte sempre que precisar",
-    icon: Headphones,
-  },
-];
-
-const trustItems: { label: string; mark: string; href?: string }[] = [
-  {
-    label: "Prefeitura de Belford Roxo",
-    mark: "BR",
-    href: "https://prefeituradebelfordroxo.rj.gov.br/",
-  },
-  { label: "Studio Caty Hair", mark: "CH" },
-  { label: "Morus Agência", mark: "MO" },
-  { label: "Gesso Infinity", mark: "GI" },
-  { label: "Ravier Barbearia", mark: "RV" },
-  { label: "Daniela Peclat", mark: "DP" },
+const trustItems = [
+  "Prefeitura de Belford Roxo",
+  "Studio Caty Hair",
+  "Morus Agência",
+  "Gesso Infinity",
+  "Ravier Barbearia",
+  "Daniela Peclat",
 ] as const;
-
-const services: Service[] = [
-  {
-    title: "Websites premium",
-    description:
-      "Sites institucionais, landing pages e experiências digitais com narrativa, estética e caminho claro até o contato.",
-    icon: MonitorSmartphone,
-    proof: "Para marcas que precisam parecer tão fortes quanto o que entregam.",
-  },
-  {
-    title: "Sistemas sob medida",
-    description:
-      "Portais, ERPs, CRMs e plataformas web criados em torno do fluxo real da operação.",
-    icon: Code2,
-    proof: "Para sair de planilhas, mensagens soltas e processos manuais.",
-  },
-  {
-    title: "Dashboards e dados",
-    description:
-      "Painéis executivos, indicadores, filtros e relatórios para transformar informação em decisão.",
-    icon: ChartNoAxesCombined,
-    proof: "Para gestores que precisam enxergar o negócio sem ruído.",
-  },
-  {
-    title: "Automações e integrações",
-    description:
-      "APIs, rotinas automáticas e conexões entre ferramentas para reduzir retrabalho e erro operacional.",
-    icon: Workflow,
-    proof: "Para equipes que perdem tempo repetindo tarefas previsíveis.",
-  },
-  {
-    title: "Sistemas governamentais",
-    description:
-      "Soluções com permissões, rastreabilidade, auditoria, relatórios e estabilidade para atendimento público.",
-    icon: ShieldCheck,
-    proof: "Para fluxos que precisam de organização, segurança e clareza.",
-  },
-  {
-    title: "Cloud e sustentação",
-    description:
-      "Deploy, monitoramento, infraestrutura e evolução contínua para manter produtos digitais saudáveis.",
-    icon: Cloud,
-    proof: "Para crescer sem transformar manutenção em dor de cabeça.",
-  },
-];
 
 const projects: ProjectItem[] = [
   {
     title: "CMIPcD",
-    tag: "Governo digital",
+    tag: "Governo digital · Case em destaque",
     description:
       "Sistema para emissão, análise e gestão da Carteira Municipal da Pessoa com Deficiência.",
-    problem:
-      "O atendimento precisava sair do fluxo manual e ganhar rastreabilidade.",
-    solution:
-      "Criamos uma plataforma com cadastro, análise, permissões e painel administrativo.",
-    impact:
-      "Processo público mais organizado, mensurável e simples de acompanhar.",
-    metric: "4.000+ cadastros",
-    stack: ["Next.js", "PostgreSQL", "Cloud", "BI"],
+    problem: "O atendimento precisava sair do fluxo manual e ganhar rastreabilidade.",
+    solution: "Plataforma com cadastro, análise, permissões e painel administrativo.",
+    impact: "Processo público mais organizado, mensurável e simples de acompanhar.",
+    metric: "Integração",
+    metricLabel: "cadastro, análise e emissão",
     href: "https://carteirapcd.prefeituradebelfordroxo.rj.gov.br/",
     image: "/projects/cmipcd.png",
-  },
-  {
-    title: "Agência Morus",
-    tag: "Presença digital",
-    description:
-      "Site premium para agência de estratégia, conteúdo e posicionamento.",
-    problem:
-      "A marca precisava comunicar método e autoridade sem parecer genérica.",
-    solution:
-      "Desenvolvemos uma presença digital com narrativa forte, SEO e conversão.",
-    impact:
-      "Comunicação mais clara e fluxo de contato mais objetivo para novos clientes.",
-    metric: "marca posicionada",
-    stack: ["Next.js", "UI Design", "SEO", "WhatsApp"],
-    href: "https://larianemorus.vercel.app/",
-    image: "/projects/agencia-morus.png",
-  },
-  {
-    title: "Daniela Peclat",
-    tag: "Psicologia e atendimento",
-    description:
-      "Website profissional para psicóloga, com comunicação acolhedora e SEO local.",
-    problem:
-      "A presença online precisava transmitir confiança antes do primeiro contato.",
-    solution:
-      "Criamos copy humanizada, estrutura de serviços e agendamento pelo WhatsApp.",
-    impact:
-      "Experiência mais segura para quem chega ao site e precisa iniciar cuidado.",
-    metric: "agendamento direto",
-    stack: ["Web Design", "SEO", "WhatsApp", "Responsivo"],
-    href: "https://danielapeclat.com.br/",
-    image: "/projects/daniela-peclat.png",
-  },
-  {
-    title: "ERP Sabor do Açaí",
-    tag: "Sistema empresarial",
-    description:
-      "ERP web para vendas, caixa, estoque, relatórios e operação integrada.",
-    problem:
-      "A rotina comercial precisava de mais controle sobre números e registros.",
-    solution:
-      "Construímos uma plataforma administrativa conectada ao fluxo do negócio.",
-    impact:
-      "Mais organização no dia a dia e leitura mais clara da operação.",
-    metric: "operação centralizada",
-    stack: ["JavaScript", "Supabase", "HTML", "CSS"],
-    href: "https://sabordoacai.vercel.app/",
-    image: "/projects/sabor-do-acai.png",
-  },
-  {
-    title: "Gesso Infinity",
-    tag: "Website corporativo",
-    description:
-      "Site institucional para empresa de drywall e estruturas metálicas.",
-    problem:
-      "A empresa precisava apresentar serviços com mais clareza e confiança.",
-    solution:
-      "Organizamos catálogo, narrativa comercial e contato rápido pelo WhatsApp.",
-    impact:
-      "Presença digital mais profissional e caminho direto para orçamento.",
-    metric: "site responsivo",
-    stack: ["HTML", "CSS", "JavaScript", "UI Design"],
-    href: "https://gessoinfinity.com.br/",
-    image: "/projects/gesso-infinity.png",
+    accent: "#1f5fff",
   },
   {
     title: "Studio Caty Hair",
-    tag: "Website premium",
+    tag: "Beleza · Site profissional",
     description:
-      "Página moderna para salão de beleza com experiência visual e conversão.",
-    problem:
-      "O posicionamento digital precisava acompanhar a experiência premium do salão.",
-    solution:
-      "Criamos uma página com impacto visual, serviços e chamada direta para atendimento.",
-    impact:
-      "Mais percepção de valor e experiência elegante para novos clientes.",
-    metric: "experiência premium",
-    stack: ["HTML", "CSS", "JavaScript", "UI Design"],
+      "Experiência digital para traduzir o posicionamento premium do salão e facilitar o atendimento.",
+    problem: "A presença online não acompanhava o nível da experiência entregue no espaço.",
+    solution: "Página visual, responsiva e organizada em torno dos serviços e do agendamento.",
+    impact: "Mais percepção de valor e um caminho direto para novos atendimentos.",
+    metric: "Premium",
+    metricLabel: "experiência de marca",
     href: "https://catyhair.vercel.app/",
     image: "/projects/studio-caty-hair.png",
+    accent: "#e0489a",
+  },
+  {
+    title: "Morus Agência",
+    tag: "Marketing · Site institucional",
+    description:
+      "Site para uma agência de estratégia, conteúdo e posicionamento com uma narrativa própria.",
+    problem: "A marca precisava comunicar método e autoridade sem parecer genérica.",
+    solution: "Arquitetura editorial, direção visual forte, SEO e fluxo claro até o contato.",
+    impact: "Posicionamento mais consistente e apresentação comercial mais objetiva.",
+    metric: "Clareza",
+    metricLabel: "na jornada comercial",
+    href: "https://larianemorus.vercel.app/",
+    image: "/projects/agencia-morus.png",
+    accent: "#7c5cff",
+  },
+  {
+    title: "Gesso Infinity",
+    tag: "Construção · Site institucional",
+    description:
+      "Presença digital para apresentar serviços de drywall e estruturas metálicas com confiança.",
+    problem: "Os serviços precisavam ficar mais claros para acelerar novos orçamentos.",
+    solution: "Catálogo organizado, narrativa comercial e contato direto pelo WhatsApp.",
+    impact: "Uma apresentação profissional que reduz atrito na decisão do cliente.",
+    metric: "Direto",
+    metricLabel: "do serviço ao orçamento",
+    href: "https://gessoinfinity.com.br/",
+    image: "/projects/gesso-infinity.png",
+    accent: "#f59e0b",
+  },
+  {
+    title: "Ravier Barbearia",
+    tag: "Barbearia · Site profissional",
+    description:
+      "Site de posicionamento para uma barbearia que precisava transformar estilo em presença digital.",
+    problem: "A experiência da marca existia no espaço físico, mas ainda não aparecia online.",
+    solution: "Direção visual, serviços, identidade e chamada clara para atendimento.",
+    impact: "Uma presença mais coerente com o público e com a personalidade da barbearia.",
+    metric: "Autoral",
+    metricLabel: "presença digital",
+    image: "/projects/barbearia-ravier.png",
+    accent: "#10b981",
+  },
+  {
+    title: "Daniela Peclat",
+    tag: "Psicologia · Site profissional",
+    description:
+      "Website acolhedor para apresentar o trabalho da psicóloga e facilitar o primeiro contato.",
+    problem: "A presença online precisava transmitir segurança antes da conversa inicial.",
+    solution: "Copy humanizada, estrutura de serviços, SEO local e agendamento pelo WhatsApp.",
+    impact: "Uma jornada mais tranquila para quem procura atendimento psicológico.",
+    metric: "Humana",
+    metricLabel: "experiência de contato",
+    href: "https://danielapeclat.com.br/",
+    image: "/projects/daniela-peclat.png",
+    accent: "#0ea5e9",
+  },
+  {
+    title: "ERP Sabor do Açaí",
+    tag: "Gestão · Sistema empresarial",
+    description:
+      "ERP web para vendas, caixa, estoque, relatórios e acompanhamento da operação.",
+    problem: "A rotina comercial precisava de mais controle sobre números e registros.",
+    solution: "Plataforma administrativa conectada ao fluxo real do negócio.",
+    impact: "Mais organização no dia a dia e leitura mais clara da operação.",
+    metric: "Central",
+    metricLabel: "operação organizada",
+    href: "https://sabordoacai.vercel.app/",
+    image: "/projects/sabor-do-acai.png",
+    accent: "#f97316",
+  },
+];
+
+const services: Service[] = [
+  {
+    title: "Sistemas sob medida",
+    description: "Portais, ERPs, CRMs e plataformas web criados em torno do fluxo real da operação.",
+    detail: "Para sair de planilhas, mensagens soltas e processos manuais.",
+    icon: Blocks,
+    size: "large",
+  },
+  {
+    title: "Websites profissionais",
+    description: "Sites institucionais, landing pages e experiências digitais com narrativa, estética e caminho claro até o contato.",
+    detail: "Para marcas que precisam parecer tão fortes quanto o que entregam.",
+    icon: Globe2,
+    size: "medium",
+  },
+  {
+    title: "Sistemas governamentais",
+    description: "Permissões, rastreabilidade, auditoria, relatórios e estabilidade para atendimento público.",
+    detail: "Organização e segurança para fluxos de alta responsabilidade.",
+    icon: ShieldCheck,
+    size: "small",
+  },
+  {
+    title: "Dashboards e dados",
+    description: "Painéis executivos, indicadores e relatórios para transformar informação em decisão.",
+    detail: "Leitura clara do negócio, sem ruído.",
+    icon: BarChart3,
+    size: "small",
+  },
+  {
+    title: "Automações e integrações",
+    description: "APIs, rotinas automáticas e conexões entre ferramentas para reduzir retrabalho e erro.",
+    detail: "Mais tempo para o que exige decisão humana.",
+    icon: Workflow,
+    size: "small",
+  },
+  {
+    title: "Cloud e sustentação",
+    description: "Para crescer sem transformar manutenção em dor de cabeça.",
+    detail: "Infraestrutura preparada para crescer com estabilidade.",
+    icon: Cloud,
+    size: "wide",
   },
 ];
 
@@ -276,12 +264,12 @@ const processSteps = [
   {
     number: "02",
     title: "Estratégia",
-    description: "Organizamos escopo, arquitetura, conteúdo, prioridades e caminho visual.",
+    description: "Organizamos escopo, arquitetura, conteúdo, prioridades e direção visual.",
   },
   {
     number: "03",
     title: "Construção",
-    description: "Transformamos direção em telas, integrações e produto funcional.",
+    description: "Transformamos a direção em telas, integrações e produto funcional.",
   },
   {
     number: "04",
@@ -291,35 +279,32 @@ const processSteps = [
   {
     number: "05",
     title: "Evolução",
-    description: "Acompanhamos melhorias, estabilidade e próximos passos do produto.",
+    description: "Acompanhamos estabilidade, melhorias e próximos passos do produto.",
   },
 ] as const;
 
-const workModes = [
-  {
-    title: "Presença digital",
-    description:
-      "Para marcas que precisam de site, landing page, posicionamento, SEO e conversão.",
-    icon: Globe2,
-    items: ["Estratégia de página", "Design premium", "WhatsApp e SEO"],
-  },
-  {
-    title: "Sistema sob medida",
-    description:
-      "Para negócios que precisam controlar processos, usuários, dados, vendas ou atendimento.",
-    icon: Code2,
-    items: ["Escopo funcional", "Painel administrativo", "Banco de dados e APIs"],
-  },
-  {
-    title: "Evolução contínua",
-    description:
-      "Para quem já tem produto digital e precisa melhorar experiência, estabilidade ou escala.",
-    icon: ChartNoAxesCombined,
-    items: ["Diagnóstico técnico", "Melhorias por fase", "Deploy e sustentação"],
-  },
+const quoteServices = [
+  { label: "Site profissional", icon: MonitorSmartphone },
+  { label: "Landing page", icon: Sparkles },
+  { label: "Sistema sob medida", icon: Code2 },
+  { label: "Dashboard", icon: BarChart3 },
+  { label: "Automação", icon: Workflow },
+  { label: "Loja virtual", icon: ShoppingBag },
+  { label: "Portal", icon: Globe2 },
+  { label: "API / integração", icon: Workflow },
+  { label: "Outro projeto", icon: Sparkles },
 ] as const;
 
-const techs = [
+const strengths = [
+  ["Fundador e desenvolvedor", "Atendimento direto e personalizado, sem intermediários."],
+  ["Do planejamento ao lançamento", "Processos ágeis e transparentes em cada etapa."],
+  ["Soluções sob medida", "Desenvolvimento focado no que realmente importa para você."],
+  ["Segurança", "Seus dados protegidos com as melhores práticas."],
+  ["Responsivo e rápido", "Experiência perfeita em qualquer dispositivo, com performance."],
+  ["Suporte próximo", "Acompanhamento sempre que você precisar."],
+] as const;
+
+const technologies = [
   "Next.js",
   "TypeScript",
   "Node.js",
@@ -329,36 +314,6 @@ const techs = [
   "Docker",
   "Tailwind",
 ] as const;
-
-const quoteServices: { label: string; icon: LucideIcon }[] = [
-  { label: "Site profissional", icon: MonitorSmartphone },
-  { label: "Landing page", icon: Sparkles },
-  { label: "Sistema sob medida", icon: Code2 },
-  { label: "Dashboard", icon: ChartNoAxesCombined },
-  { label: "Automação", icon: Workflow },
-  { label: "Loja virtual", icon: ShoppingBag },
-  { label: "Portal", icon: Globe2 },
-  { label: "API / integração", icon: Cable },
-  { label: "Outro", icon: BriefcaseBusiness },
-];
-
-const aboutPrinciples: { title: string; text: string; icon: LucideIcon }[] = [
-  {
-    title: "Estratégia",
-    text: "Entendemos o objetivo e definimos o melhor caminho para chegar lá.",
-    icon: Target,
-  },
-  {
-    title: "Design",
-    text: "Clareza visual, foco no usuário e identidade que transmite confiança.",
-    icon: PencilLine,
-  },
-  {
-    title: "Engenharia",
-    text: "Código limpo, performance e soluções feitas para escalar com segurança.",
-    icon: Code2,
-  },
-];
 
 function PWARegister() {
   useEffect(() => {
@@ -370,72 +325,42 @@ function PWARegister() {
   return null;
 }
 
-function useActiveSection() {
-  const [active, setActive] = useState("inicio");
-
-  useEffect(() => {
-    const ids = ["inicio", ...navItems.map(({ href }) => href.replace("#", ""))];
-    const sections = ids
-      .map((id) => document.getElementById(id))
-      .filter((section): section is HTMLElement => Boolean(section));
-
-    if (!sections.length) return undefined;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-
-        if (visible?.target.id) setActive(visible.target.id);
-      },
-      { rootMargin: "-42% 0px -48% 0px", threshold: [0.12, 0.3, 0.55] },
-    );
-
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, []);
-
-  return active;
-}
-
 function Reveal({
   children,
   className = "",
   delay = 0,
   direction = "up",
-  duration = 0.68,
 }: {
   children: ReactNode;
   className?: string;
   delay?: number;
   direction?: "up" | "left" | "right" | "scale";
-  duration?: number;
 }) {
   const reduceMotion = useReducedMotion();
-  const distance = direction === "up" ? 28 : 30;
   const initial =
     direction === "left"
-      ? { opacity: 0, x: -distance }
+      ? { opacity: 0, x: -28 }
       : direction === "right"
-        ? { opacity: 0, x: distance }
+        ? { opacity: 0, x: 28 }
         : direction === "scale"
-          ? { opacity: 0, y: 18, scale: 0.985 }
-          : { opacity: 0, y: distance };
-  const animate =
-    direction === "left" || direction === "right"
-      ? { opacity: 1, x: 0 }
-      : direction === "scale"
-        ? { opacity: 1, y: 0, scale: 1 }
-        : { opacity: 1, y: 0 };
+          ? { opacity: 0, y: 14, scale: 0.985 }
+          : { opacity: 0, y: 26 };
 
   return (
     <motion.div
-      className={className}
+      className={`reveal ${className}`}
       initial={reduceMotion ? false : initial}
-      whileInView={reduceMotion ? undefined : animate}
-      viewport={{ once: true, amount: 0.22, margin: "-96px 0px -80px" }}
-      transition={{ duration, delay, ease: [0.16, 1, 0.3, 1] }}
+      whileInView={
+        reduceMotion
+          ? undefined
+          : direction === "left" || direction === "right"
+            ? { opacity: 1, x: 0 }
+            : direction === "scale"
+              ? { opacity: 1, y: 0, scale: 1 }
+              : { opacity: 1, y: 0 }
+      }
+      viewport={{ once: true, amount: 0.18, margin: "-72px 0px" }}
+      transition={{ duration: 0.72, delay, ease: [0.16, 1, 0.3, 1] }}
     >
       {children}
     </motion.div>
@@ -444,96 +369,120 @@ function Reveal({
 
 function Logo() {
   return (
-    <a className="brand-logo" href="#inicio" aria-label="AL Tech">
-      <span className="brand-mark">
-        A<b>L</b>
-      </span>
-      <span>
+    <a className="brand-logo" href="#inicio" aria-label="AL Tech - início">
+      <span className="brand-mark">AL</span>
+      <span className="brand-copy">
         <strong>AL Tech</strong>
-        <small>Desenvolvimento digital</small>
       </span>
     </a>
   );
 }
 
-function SectionHeading({
-  eyebrow,
-  title,
-  children,
-  align = "left",
-}: {
-  eyebrow: string;
-  title: ReactNode;
-  children?: ReactNode;
-  align?: "left" | "center";
-}) {
-  return (
-    <div className={`section-heading ${align === "center" ? "center" : ""}`}>
-      <span className="eyebrow">{eyebrow}</span>
-      <h2>{title}</h2>
-      {children && <p>{children}</p>}
-    </div>
-  );
-}
-
 function Header() {
   const [open, setOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
-  const active = useActiveSection();
+  const [progress, setProgress] = useState(0);
+  const [active, setActive] = useState("inicio");
+  const navRef = useRef<HTMLElement>(null);
+  const menuButtonRef = useRef<HTMLButtonElement>(null);
+
+  const closeMenu = () => {
+    setOpen(false);
+    menuButtonRef.current?.focus();
+  };
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 20);
+    const onScroll = () => {
+      const available = document.documentElement.scrollHeight - window.innerHeight;
+      setProgress(available > 0 ? Math.min(window.scrollY / available, 1) : 0);
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   useEffect(() => {
+    const sections = ["inicio", ...navItems.map((item) => item.href.slice(1))]
+      .map((id) => document.getElementById(id))
+      .filter((section): section is HTMLElement => Boolean(section));
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((entry) => entry.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+        if (visible?.target.id) setActive(visible.target.id);
+      },
+      { rootMargin: "-20% 0px -60%", threshold: 0 },
+    );
+    sections.forEach((section) => observer.observe(section));
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     document.body.classList.toggle("menu-open", open);
+    if (open) requestAnimationFrame(() => navRef.current?.querySelector("a")?.focus());
     return () => document.body.classList.remove("menu-open");
   }, [open]);
 
   useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setOpen(false);
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape" && open) {
+        setOpen(false);
+        menuButtonRef.current?.focus();
+      }
     };
+    window.addEventListener("keydown", close);
+    return () => window.removeEventListener("keydown", close);
+  }, [open]);
 
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
+  useEffect(() => {
+    const desktop = window.matchMedia("(min-width: 821px)");
+    const closeOnDesktop = () => {
+      if (desktop.matches) setOpen(false);
+    };
+    desktop.addEventListener("change", closeOnDesktop);
+    return () => desktop.removeEventListener("change", closeOnDesktop);
   }, []);
 
   return (
-    <header className={`site-header ${scrolled ? "scrolled" : ""}`}>
+    <header className={`site-header ${progress > 0.01 ? "scrolled" : ""}`}>
+      <span className="scroll-progress" style={{ transform: `scaleX(${progress})` }} />
       <div className="nav-bar">
         <Logo />
-        <nav className={open ? "open" : ""} aria-label="Navegação principal">
-          {navItems.map(({ label, href, icon: Icon }) => {
-            const id = href.replace("#", "");
-            const activeItem = active === id;
-
+        <nav
+          ref={navRef}
+          id="primary-navigation"
+          className={open ? "open" : ""}
+          aria-label="Navegação principal"
+        >
+          {navItems.filter((item) => item.href !== "#contato").map((item) => {
+            const current = active === item.href.slice(1);
             return (
               <a
-                key={label}
-                href={href}
-                className={activeItem ? "active" : ""}
-                aria-current={activeItem ? "page" : undefined}
-                onClick={() => setOpen(false)}
+                key={item.href}
+                href={item.href}
+                className={current ? "active" : ""}
+                aria-current={current ? "page" : undefined}
+                onClick={() => {
+                  if (open) closeMenu();
+                }}
               >
-                <Icon aria-hidden="true" />
-                <span>{label}</span>
+                {item.label}
               </a>
             );
           })}
+          <Link href="/minha-historia" onClick={() => { if (open) closeMenu(); }}>Minha história</Link>
         </nav>
         <a className="nav-cta" href="#contato">
-          Orçamento <ArrowRight />
+          Orçamento <ArrowRight aria-hidden="true" />
         </a>
         <button
+          ref={menuButtonRef}
           className="menu-button"
           type="button"
           onClick={() => setOpen((value) => !value)}
           aria-label={open ? "Fechar menu" : "Abrir menu"}
           aria-expanded={open}
+          aria-controls="primary-navigation"
         >
           {open ? <X /> : <Menu />}
         </button>
@@ -542,77 +491,138 @@ function Header() {
   );
 }
 
-function HeroVisual() {
+function HeroDashboard() {
+  const [statusIndex, setStatusIndex] = useState(0);
+  const reduceMotion = useReducedMotion();
+  const statuses = [
+    ["Em análise", "Solicitação em análise"],
+    ["Aprovada", "Solicitação aprovada"],
+    ["Em análise", "Nova solicitação recebida"],
+  ] as const;
+
+  useEffect(() => {
+    if (reduceMotion) return undefined;
+    const timer = window.setInterval(
+      () => setStatusIndex((current) => (current + 1) % statuses.length),
+      2800,
+    );
+    return () => window.clearInterval(timer);
+  }, [reduceMotion, statuses.length]);
+
+  const onPointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (reduceMotion || event.pointerType !== "mouse") return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - bounds.left) / bounds.width - 0.5;
+    const y = (event.clientY - bounds.top) / bounds.height - 0.5;
+    event.currentTarget.style.setProperty("--dashboard-ry", `${(-8 + x * 14).toFixed(2)}deg`);
+    event.currentTarget.style.setProperty("--dashboard-rx", `${(4 - y * 12).toFixed(2)}deg`);
+  };
+
+  const resetTilt = (event: PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.style.setProperty("--dashboard-ry", "-8deg");
+    event.currentTarget.style.setProperty("--dashboard-rx", "4deg");
+  };
+
   return (
-    <div className="hero-visual hero-stack-visual" aria-label="Estrutura digital da AL Tech">
-      <div className="hero-ambient-grid" aria-hidden="true" />
-      <div className="hero-orbit hero-orbit-one" aria-hidden="true" />
-      <div className="hero-stack" aria-hidden="true">
-        <span className="hero-stack-layer stack-base" />
-        <span className="hero-stack-layer stack-mid" />
-        <span className="hero-stack-layer stack-top" />
-      </div>
-      <div className="hero-info-card founder-card">
-        <UserRound />
-        <div>
-          <strong>Fundador e desenvolvedor</strong>
-          <span>Atendimento direto e personalizado</span>
+    <div className="hero-dashboard-wrap" onPointerMove={onPointerMove} onPointerLeave={resetTilt}>
+      <div className="hero-dashboard">
+        <div className="browser-bar" aria-hidden="true">
+          <span /><span /><span />
+          <p>carteirapcd.prefeituradebelfordroxo.rj.gov.br</p>
+        </div>
+        <div className="dashboard-body">
+          <aside aria-hidden="true">
+            <i className="selected" /><i /><i /><i />
+          </aside>
+          <div className="dashboard-content">
+            <span className="dashboard-workflow-label">Fluxo de atendimento</span>
+            <div className="dashboard-workflow" aria-label="Cadastro, análise e emissão">
+              <div><MonitorSmartphone aria-hidden="true" /><span>Cadastro</span></div>
+              <ArrowRight className="workflow-arrow" aria-hidden="true" />
+              <div><ShieldCheck aria-hidden="true" /><span>Análise</span></div>
+              <ArrowRight className="workflow-arrow" aria-hidden="true" />
+              <div><CheckCircle2 aria-hidden="true" /><span>Emissão</span></div>
+            </div>
+            <div className="dashboard-rows">
+              <div><span>Revisão de solicitação</span><b className="approved">Aprovada</b></div>
+              <div>
+                <span>Análise de documento</span>
+                <b className={statuses[statusIndex][0] === "Aprovada" ? "approved" : ""}>
+                  {statuses[statusIndex][0]}
+                </b>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
-      <div className="hero-info-card launch-card">
-        <Rocket />
-        <div>
-          <strong>Do planejamento ao lançamento</strong>
-          <span>Processos ágeis e transparentes</span>
-        </div>
+      <span className="dashboard-caption">Visão ilustrativa do painel CMIPcD</span>
+      <div className="dashboard-float system-float">
+        <strong>CMIPcD</strong>
+        <span>Atendimento municipal</span>
       </div>
-      <div className="hero-info-card solution-card">
-        <Code2 />
-        <div>
-          <strong>Soluções sob medida</strong>
-          <span>Desenvolvimento focado no que realmente importa para você</span>
+      <div className="dashboard-float status-float">
+        <i aria-hidden="true" />
+        <span>{statuses[statusIndex][1]}</span>
+      </div>
+      <div className="dashboard-float product-float">
+        <div className="identity-preview" aria-hidden="true">
+          <i />
+          <div><s /><s /><s /></div>
         </div>
+        <small>Carteira Municipal da Pessoa com Deficiência</small>
       </div>
     </div>
   );
 }
 
 function HeroSection() {
+  const reduceMotion = useReducedMotion();
+  const title = "Tecnologia com propósito. Estratégia que gera resultados.";
+
+  const onPointerMove = (event: PointerEvent<HTMLElement>) => {
+    if (reduceMotion || event.pointerType !== "mouse") return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.style.setProperty("--mouse-x", `${event.clientX - bounds.left}px`);
+    event.currentTarget.style.setProperty("--mouse-y", `${event.clientY - bounds.top}px`);
+  };
+
   return (
-    <section id="inicio" className="hero-section">
-      <div className="hero-inner">
-        <Reveal className="hero-copy">
-          <span className="eyebrow">Atendimento remoto para todo o Brasil</span>
-          <h1>
-            Tecnologia com propósito. <span>Estratégia que gera resultados.</span>
+    <section id="inicio" className="hero-section" onPointerMove={onPointerMove}>
+      <div className="hero-grid" aria-hidden="true" />
+      <div className="hero-grid spotlight-grid" aria-hidden="true" />
+      <div className="section-wrap hero-layout">
+        <div className="hero-copy">
+          <span className="hero-status"><i /> Estúdio de desenvolvimento digital, atendimento para todo o Brasil</span>
+          <h1 aria-label={title}>
+            {title.split(" ").map((word, index) => (
+              <Fragment key={`${word}-${index}`}>
+                <span className={`hero-word ${index > 2 ? "accent-word" : ""}`} aria-hidden="true">
+                  <span style={{ "--word-index": index } as CSSProperties}>{word}</span>
+                </span>{" "}
+              </Fragment>
+            ))}
           </h1>
           <p>
-            Desenvolvemos sites, sistemas e plataformas digitais pensados para
-            otimizar processos, fortalecer marcas e transformar ideias em soluções
-            reais.
+            A AL Tech une visão de negócio, design e desenvolvimento para criar sites,
+            sistemas e plataformas que organizam processos e fortalecem marcas.
+            {" "}Nosso case mais forte é o CMIPcD, usado pela Prefeitura de Belford Roxo.
           </p>
           <div className="hero-actions">
-            <a className="primary-button" href="#contato">
-              Quero tirar minha ideia do papel <ArrowRight />
+            <a className="button button-primary" href="#projetos" onPointerMove={onMagneticMove} onPointerLeave={onMagneticLeave}>
+              Ver o case CMIPcD <ArrowRight />
             </a>
-            <a className="secondary-button" href="#projetos">
-              Ver projetos <ArrowRight />
+            <a className="button button-ghost" href={WHATSAPP_URL} target="_blank" rel="noreferrer" onPointerMove={onMagneticMove} onPointerLeave={onMagneticLeave}>
+              Falar no WhatsApp
             </a>
           </div>
-        </Reveal>
-        <Reveal className="hero-media" delay={0.08}>
-          <HeroVisual />
-        </Reveal>
-        <Reveal className="hero-feature-bar" delay={0.12}>
-          {heroHighlights.map(({ title, text, icon: Icon }) => (
-            <article key={title}>
-              <Icon aria-hidden="true" />
-              <div>
-                <strong>{title}</strong>
-                <span>{text}</span>
-              </div>
-            </article>
-          ))}
+          <div className="hero-checks">
+            <span><CheckCircle2 /> Atendimento direto com o fundador</span>
+            <span><CheckCircle2 /> Do planejamento ao lançamento</span>
+            <span><CheckCircle2 /> Suporte e evolução contínua</span>
+          </div>
+        </div>
+        <Reveal className="hero-media" direction="right" delay={0.12}>
+          <HeroDashboard />
         </Reveal>
       </div>
     </section>
@@ -621,144 +631,179 @@ function HeroSection() {
 
 function TrustStrip() {
   return (
-    <section className="trust-strip" aria-label="Projetos e marcas do portfólio">
-      <span>Projetos e marcas que passaram pela AL Tech</span>
-      <div>
-        {trustItems.map((item) => (
-          item.href ? (
-            <a
-              key={item.label}
-              className="trust-item"
-              href={item.href}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <small>{item.mark}</small>
-              <strong>{item.label}</strong>
-            </a>
-          ) : (
-            <article key={item.label} className="trust-item">
-              <small>{item.mark}</small>
-              <strong>{item.label}</strong>
-            </article>
-          )
+    <section className="trust-strip" aria-label="Marcas e projetos do portfólio">
+      <p>Projetos e marcas que passaram pela AL Tech</p>
+      <div className="trust-marquee">
+        {[...trustItems, ...trustItems].map((item, index) => (
+          <span key={`${item}-${index}`} aria-hidden={index >= trustItems.length ? "true" : undefined}>
+            {item}
+            <i aria-hidden="true">✦</i>
+          </span>
         ))}
       </div>
     </section>
   );
 }
 
-function ProblemSection() {
-  const reduceMotion = useReducedMotion();
-  const ease = [0.16, 1, 0.3, 1] as const;
-  const painPoints = [
-    {
-      icon: MonitorSmartphone,
-      title: "Presença sem força",
-      text: "O site parece genérico e não passa o valor real da marca.",
-    },
-    {
-      icon: Send,
-      title: "Operação espalhada",
-      text: "A operação depende de planilhas, mensagens e retrabalho.",
-    },
-    {
-      icon: Database,
-      title: "Dados sem leitura",
-      text: "Os dados existem, mas não viram decisão com clareza.",
-    },
-  ];
-
+function SectionHeading({ eyebrow, title, children }: { eyebrow: string; title: string; children?: ReactNode }) {
   return (
-    <section className="problem-section">
-      <Reveal className="problem-copy" direction="left">
-        <span className="eyebrow">Talvez sua empresa esteja aqui</span>
-        <h2>
-          Você tem uma boa entrega, mas sua estrutura digital ainda não mostra isso.
-        </h2>
-      </Reveal>
-      <Reveal className="problem-stack" direction="right" delay={0.08}>
-        {painPoints.map(({ icon: Icon, title, text }, index) => (
-          <motion.article
-            key={title}
-            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
-            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.42, margin: "-80px 0px -60px" }}
-            transition={{ duration: 0.54, delay: index * 0.08, ease }}
-          >
-            <Icon />
-            <div>
-              <strong>{title}</strong>
-              <p>{text}</p>
-            </div>
-          </motion.article>
-        ))}
-      </Reveal>
-    </section>
+    <div className="section-heading">
+      <span>{eyebrow}</span>
+      <h2>{title}</h2>
+      {children && <p>{children}</p>}
+    </div>
   );
 }
 
-function AboutSection() {
+function ProjectShowcase() {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [autoplay, setAutoplay] = useState(true);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const sectionRef = useRef<HTMLElement>(null);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const inView = useInView(sectionRef, { amount: 0.25 });
   const reduceMotion = useReducedMotion();
-  const ease = [0.16, 1, 0.3, 1] as const;
+  const project = projects[activeIndex];
+  const playing = autoplay && !hovered && !focused && inView && !reduceMotion;
+
+  useEffect(() => {
+    if (!playing) return undefined;
+    const timer = window.setInterval(
+      () => setActiveIndex((current) => (current + 1) % projects.length),
+      7000,
+    );
+    return () => window.clearInterval(timer);
+  }, [playing]);
+
+  const selectProject = (index: number) => {
+    setActiveIndex(index);
+    setAutoplay(false);
+  };
+
+  const onTabKeyDown = (event: ReactKeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex = index;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") {
+      nextIndex = (index + 1) % projects.length;
+    } else if (event.key === "ArrowLeft" || event.key === "ArrowUp") {
+      nextIndex = (index - 1 + projects.length) % projects.length;
+    } else if (event.key === "Home") {
+      nextIndex = 0;
+    } else if (event.key === "End") {
+      nextIndex = projects.length - 1;
+    } else {
+      return;
+    }
+    event.preventDefault();
+    selectProject(nextIndex);
+    tabsRef.current?.querySelectorAll<HTMLButtonElement>("[role=tab]")[nextIndex]?.focus();
+  };
+
+  const isExternal = project.href?.startsWith("http");
 
   return (
-    <section id="sobre" className="about-section">
-      <div className="about-layout">
-        <Reveal className="about-portrait" direction="left" delay={0.04}>
-          <Image
-            src="/alessandro-araujo.jpg"
-            alt="Retrato de Alessandro Araujo"
-            fill
-            sizes="(max-width: 820px) 92vw, 40vw"
-          />
-          <span className="portrait-chip">
-            <BadgeCheck />
-            Fundador
-          </span>
-          <div className="portrait-label">
-            <span>Alessandro Araujo</span>
-            <strong>Fundador da AL Tech</strong>
-            <i aria-hidden="true" />
-            <p>
-              Estratégia, design e tecnologia para criar soluções que geram
-              impacto.
-            </p>
-          </div>
+    <section ref={sectionRef} id="projetos" className="projects-section">
+      <div className="section-wrap">
+        <Reveal>
+          <SectionHeading eyebrow="Projetos" title="Cases reais, um de cada vez">
+            Contexto do problema, a solução construída e o impacto de cada entrega.
+          </SectionHeading>
         </Reveal>
-        <Reveal className="about-story" direction="right" delay={0.1}>
-          <span className="eyebrow">Sobre a AL Tech</span>
-          <h2>
-            Uma empresa pequena o suficiente para cuidar de perto, técnica o
-            bastante para construir <span>grande.</span>
-          </h2>
-          <i className="about-title-line" aria-hidden="true" />
-          <p>
-            Sou Alessandro Araujo, fundador da AL Tech. Eu uno visão de negócio,
-            design e desenvolvimento para criar soluções digitais que façam sentido
-            para quem compra, para quem usa e para quem precisa manter tudo rodando.
-          </p>
-          <p>
-            A ideia não é empilhar tecnologia. É entender o problema, escolher o
-            caminho certo e entregar uma experiência que pareça simples, mesmo quando
-            existe muita engenharia por trás.
-          </p>
-          <div className="working-principles">
-            {aboutPrinciples.map(({ title, text, icon: Icon }, index) => (
-              <motion.article
-                key={title}
-                initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-                whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.3, margin: "-80px 0px -60px" }}
-                transition={{ duration: 0.58, delay: 0.12 + index * 0.09, ease }}
+
+        <Reveal className="projects-layout" direction="scale" delay={0.08}>
+          <div ref={tabsRef} className="project-tabs" role="tablist" aria-label="Projetos da AL Tech">
+            {projects.map((item, index) => (
+              <button
+                key={item.title}
+                type="button"
+                role="tab"
+                id={`project-tab-${index}`}
+                aria-controls="project-panel"
+                aria-selected={index === activeIndex}
+                tabIndex={index === activeIndex ? 0 : -1}
+                className={index === activeIndex ? "active" : ""}
+                onClick={() => selectProject(index)}
+                onKeyDown={(event) => onTabKeyDown(event, index)}
               >
-                <Icon aria-hidden="true" />
-                <div>
-                  <span>{title}</span>
-                  <p>{text}</p>
+                <strong>{item.title}</strong>
+                <span>{item.tag.split(" · ")[0]}</span>
+                {index === activeIndex && autoplay && !reduceMotion && (
+                  <i style={{ animationPlayState: playing ? "running" : "paused" }} />
+                )}
+              </button>
+            ))}
+          </div>
+
+          <div
+            className="project-stage-shell"
+            onPointerEnter={() => setHovered(true)}
+            onPointerLeave={() => setHovered(false)}
+            onFocusCapture={() => setFocused(true)}
+            onBlurCapture={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget)) setFocused(false);
+            }}
+            id="project-panel"
+            role="tabpanel"
+            aria-labelledby={`project-tab-${activeIndex}`}
+          >
+            <AnimatePresence mode="wait">
+              <motion.article
+                key={project.title}
+                className="project-stage"
+                style={{ "--project-accent": project.accent } as CSSProperties}
+                initial={reduceMotion ? false : { opacity: 0, x: 22 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={reduceMotion ? undefined : { opacity: 0, x: -16 }}
+                transition={{ duration: 0.48, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <div className="project-info">
+                  <span>{project.tag}</span>
+                  <h3>{project.title}</h3>
+                  <p>{project.description}</p>
+                  <dl>
+                    <div><dt>Problema</dt><dd>{project.problem}</dd></div>
+                    <div><dt>Solução</dt><dd>{project.solution}</dd></div>
+                    <div><dt>Impacto</dt><dd>{project.impact}</dd></div>
+                  </dl>
+                  <div className="project-result">
+                    <strong>{project.metric}</strong>
+                    <span>{project.metricLabel}</span>
+                  </div>
+                  <a
+                    className="button button-blue"
+                    href={project.href ?? "#contato"}
+                    target={isExternal ? "_blank" : undefined}
+                    rel={isExternal ? "noreferrer" : undefined}
+                  >
+                    {project.href ? "Ver projeto" : "Quero algo assim"}
+                    {project.href ? <ExternalLink /> : <ArrowRight />}
+                  </a>
+                </div>
+                <div className="project-preview">
+                  <div className="browser-bar" aria-hidden="true">
+                    <span /><span /><span />
+                    <p>{project.href ? new URL(project.href).hostname : project.title}</p>
+                  </div>
+                  <div className="project-image">
+                    <Image
+                      src={project.image}
+                      alt={`Projeto ${project.title}`}
+                      fill
+                      loading="eager"
+                      sizes="(max-width: 900px) 92vw, 45vw"
+                    />
+                  </div>
                 </div>
               </motion.article>
-            ))}
+            </AnimatePresence>
+            {!reduceMotion && <button
+              className="project-playback"
+              type="button"
+              onClick={() => setAutoplay((value) => !value)}
+              aria-label={autoplay ? "Pausar troca automática" : "Retomar troca automática"}
+            >
+              {autoplay ? <Pause /> : <Play />}
+            </button>}
           </div>
         </Reveal>
       </div>
@@ -767,350 +812,145 @@ function AboutSection() {
 }
 
 function ServicesSection() {
+  const reduceMotion = useReducedMotion();
+  const onPointerMove = (event: PointerEvent<HTMLElement>) => {
+    if (reduceMotion || event.pointerType !== "mouse") return;
+    const bounds = event.currentTarget.getBoundingClientRect();
+    event.currentTarget.style.setProperty("--spot-x", `${event.clientX - bounds.left}px`);
+    event.currentTarget.style.setProperty("--spot-y", `${event.clientY - bounds.top}px`);
+  };
+
   return (
     <section id="servicos" className="services-section">
-      <Reveal direction="left">
-        <SectionHeading
-          eyebrow="O que fazemos"
-          title="Estrutura digital para marcas, operações e produtos."
-        >
-          Cada entrega nasce de uma necessidade concreta: vender melhor, organizar
-          processos, criar autoridade, medir resultados ou sustentar crescimento.
-        </SectionHeading>
-      </Reveal>
-      <div className="service-bento">
-        {services.map(({ title, description, icon: Icon, proof }, index) => (
-          <Reveal key={title} delay={0.08 + index * 0.085} duration={0.62}>
-            <article className={`service-card ${index < 2 ? "wide" : ""}`}>
-              <div className="service-icon">
-                <Icon />
-              </div>
-              <span>{String(index + 1).padStart(2, "0")}</span>
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <strong>{proof}</strong>
-              <a href="#contato" aria-label={`Conversar sobre ${title}`}>
-                <ArrowRight />
-              </a>
-            </article>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
-function ProjectCarousel() {
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [paused, setPaused] = useState(false);
-  const touchStartX = useRef<number | null>(null);
-  const reduceMotion = useReducedMotion();
-  const project = projects[activeIndex];
-
-  const goTo = (index: number) => {
-    const nextIndex = (index + projects.length) % projects.length;
-    setActiveIndex(nextIndex);
-  };
-
-  const goNext = () => goTo(activeIndex + 1);
-  const goPrevious = () => goTo(activeIndex - 1);
-
-  useEffect(() => {
-    if (paused || reduceMotion) return undefined;
-
-    const timer = window.setInterval(() => {
-      setActiveIndex((current) => (current + 1) % projects.length);
-    }, 6000);
-
-    return () => window.clearInterval(timer);
-  }, [activeIndex, paused, reduceMotion]);
-
-  const onTouchStart = (event: TouchEvent<HTMLElement>) => {
-    touchStartX.current = event.touches[0]?.clientX ?? null;
-  };
-
-  const onTouchEnd = (event: TouchEvent<HTMLElement>) => {
-    if (touchStartX.current === null) return;
-    const endX = event.changedTouches[0]?.clientX ?? touchStartX.current;
-    const distance = endX - touchStartX.current;
-
-    if (Math.abs(distance) > 42) {
-      if (distance < 0) goNext();
-      else goPrevious();
-    }
-
-    touchStartX.current = null;
-  };
-
-  return (
-    <section id="projetos" className="projects-section">
-      <Reveal direction="left">
-        <SectionHeading
-          eyebrow="Projetos"
-          title="Cases reais, vistos um por vez."
-        >
-          O portfólio aparece em foco: uma tela grande, contexto do problema e o
-          impacto de cada entrega sem transformar a página em uma lista infinita.
-        </SectionHeading>
-      </Reveal>
-
-      <Reveal className="carousel-shell" direction="scale" delay={0.08} duration={0.72}>
-        <div
-          className="case-carousel"
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-          onFocus={() => setPaused(true)}
-          onBlur={() => setPaused(false)}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
-        >
-          <button
-            className="carousel-button previous"
-            type="button"
-            onClick={goPrevious}
-            aria-label="Ver projeto anterior"
-          >
-            <ArrowLeft />
-          </button>
-
-          <AnimatePresence mode="wait">
-            <motion.article
-              key={project.title}
-              className="case-slide"
-              initial={reduceMotion ? false : { opacity: 0, y: 24, scale: 0.985 }}
-              animate={reduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
-              exit={reduceMotion ? undefined : { opacity: 0, y: -16, scale: 0.99 }}
-              transition={{ duration: 0.52, ease: [0.16, 1, 0.3, 1] }}
-            >
-              <a
-                className="case-preview"
-                href={project.href}
-                target="_blank"
-                rel="noreferrer"
-                aria-label={`Ver projeto ${project.title}`}
-              >
-                <Image
-                  src={project.image}
-                  alt={`Screenshot do projeto ${project.title}`}
-                  fill
-                  unoptimized
-                  sizes="(max-width: 820px) 92vw, 58vw"
-                />
-              </a>
-              <div className="case-content">
-                <span>{project.tag}</span>
-                <h3>{project.title}</h3>
-                <p>{project.description}</p>
-                <dl>
-                  <div>
-                    <dt>Problema</dt>
-                    <dd>{project.problem}</dd>
-                  </div>
-                  <div>
-                    <dt>Solução</dt>
-                    <dd>{project.solution}</dd>
-                  </div>
-                  <div>
-                    <dt>Impacto</dt>
-                    <dd>{project.impact}</dd>
-                  </div>
-                </dl>
-                <strong>{project.metric}</strong>
-                <div className="stack-list" aria-label="Tecnologias utilizadas">
-                  {project.stack.map((item) => (
-                    <small key={item}>{item}</small>
-                  ))}
+      <div className="section-wrap">
+        <Reveal>
+          <SectionHeading eyebrow="O que fazemos" title="Estrutura digital para marcas, operações e produtos">
+            Cada entrega nasce de uma necessidade concreta: vender melhor, organizar processos,
+            criar autoridade, medir resultados ou sustentar crescimento.
+          </SectionHeading>
+        </Reveal>
+        <div className="services-grid">
+          {services.map(({ title, description, detail, icon: Icon, size }, index) => (
+            <Reveal key={title} className={`service-item ${size}`} delay={index * 0.05}>
+              <article className={`service-card ${size}`} onPointerMove={onPointerMove}>
+                <Icon aria-hidden="true" />
+                <div className="service-copy">
+                  <h3>{title}</h3>
+                  <p>{description}</p>
                 </div>
-                <a className="case-link" href={project.href} target="_blank" rel="noreferrer">
-                  Ver projeto <ExternalLink />
-                </a>
-              </div>
-            </motion.article>
-          </AnimatePresence>
-
-          <button
-            className="carousel-button next"
-            type="button"
-            onClick={goNext}
-            aria-label="Ver próximo projeto"
-          >
-            <ArrowRight />
-          </button>
+                {(size === "large" || size === "medium") && <span>{detail}</span>}
+                {title === "Sistemas governamentais" && (
+                  <a href="#projetos">Veja o CMIPcD <ArrowRight /></a>
+                )}
+                {title === "Dashboards e dados" && (
+                  <div className="service-chart" aria-hidden="true">
+                    {[38, 62, 48, 82, 100].map((height) => <i key={height} style={{ height: `${height}%` }} />)}
+                  </div>
+                )}
+                {size === "wide" && (
+                  <div className="service-tags" aria-label="Recursos de cloud e sustentação">
+                    <b>Deploy</b><b>Monitoramento</b><b>Infraestrutura</b><b>Evolução contínua</b>
+                  </div>
+                )}
+              </article>
+            </Reveal>
+          ))}
         </div>
-
-        <div className="carousel-meta">
-          <span>
-            {String(activeIndex + 1).padStart(2, "0")} / {String(projects.length).padStart(2, "0")}
-          </span>
-          <div aria-label="Selecionar projeto">
-            {projects.map((item, index) => (
-              <button
-                key={item.title}
-                type="button"
-                className={index === activeIndex ? "active" : ""}
-                onClick={() => goTo(index)}
-                aria-label={`Ver case ${item.title}`}
-              />
-            ))}
-          </div>
-        </div>
-      </Reveal>
-    </section>
-  );
-}
-
-function WorkModesSection() {
-  const reduceMotion = useReducedMotion();
-
-  const onSectionPointerMove = (event: PointerEvent<HTMLElement>) => {
-    if (reduceMotion || event.pointerType !== "mouse" || window.innerWidth < 821) return;
-
-    const bounds = event.currentTarget.getBoundingClientRect();
-    const x = ((event.clientX - bounds.left) / bounds.width - 0.5) * 2;
-    const y = ((event.clientY - bounds.top) / bounds.height - 0.5) * 2;
-
-    event.currentTarget.style.setProperty("--stack-parallax-top-x", `${(x * 7).toFixed(2)}px`);
-    event.currentTarget.style.setProperty("--stack-parallax-top-y", `${(y * 6).toFixed(2)}px`);
-    event.currentTarget.style.setProperty("--stack-parallax-mid-x", `${(x * 5).toFixed(2)}px`);
-    event.currentTarget.style.setProperty("--stack-parallax-mid-y", `${(y * 4).toFixed(2)}px`);
-    event.currentTarget.style.setProperty("--stack-parallax-base-x", `${(x * 3).toFixed(2)}px`);
-    event.currentTarget.style.setProperty("--stack-parallax-base-y", `${(y * 2.5).toFixed(2)}px`);
-  };
-
-  const onSectionPointerLeave = (event: PointerEvent<HTMLElement>) => {
-    event.currentTarget.style.setProperty("--stack-parallax-top-x", "0px");
-    event.currentTarget.style.setProperty("--stack-parallax-top-y", "0px");
-    event.currentTarget.style.setProperty("--stack-parallax-mid-x", "0px");
-    event.currentTarget.style.setProperty("--stack-parallax-mid-y", "0px");
-    event.currentTarget.style.setProperty("--stack-parallax-base-x", "0px");
-    event.currentTarget.style.setProperty("--stack-parallax-base-y", "0px");
-  };
-
-  const copyEase = [0.2, 0.8, 0.2, 1] as const;
-  const viewport = { once: true, margin: "-80px" };
-
-  return (
-    <section
-      className="work-modes-section"
-      onPointerMove={onSectionPointerMove}
-      onPointerLeave={onSectionPointerLeave}
-    >
-      <div className="work-start-head">
-        <div className="section-heading work-mode-heading">
-          <motion.span
-            className="eyebrow"
-            initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-            viewport={viewport}
-            transition={{ duration: 0.55, ease: copyEase }}
-          >
-            Formas de começar
-          </motion.span>
-          <motion.h2
-            initial={reduceMotion ? false : { opacity: 0, y: 20 }}
-            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-            viewport={viewport}
-            transition={{ duration: 0.68, delay: 0.08, ease: copyEase }}
-          >
-            Uma estrutura para cada momento do negócio.
-          </motion.h2>
-          <motion.p
-            initial={reduceMotion ? false : { opacity: 0, y: 15 }}
-            whileInView={reduceMotion ? undefined : { opacity: 1, y: 0 }}
-            viewport={viewport}
-            transition={{ duration: 0.62, delay: 0.16, ease: copyEase }}
-          >
-            O escopo final é personalizado depois do diagnóstico, mas estes são os
-            caminhos mais comuns para iniciar com clareza.
-          </motion.p>
-        </div>
-        <motion.div
-          className="stack-visual"
-          initial={reduceMotion ? false : { opacity: 0, x: 25, scale: 0.97 }}
-          whileInView={reduceMotion ? undefined : { opacity: 1, x: 0, scale: 1 }}
-          viewport={viewport}
-          transition={{ duration: 0.72, delay: 0.18, ease: copyEase }}
-        >
-          <div className="stack-layer top">
-            <Rocket />
-          </div>
-          <div className="stack-layer middle" />
-          <div className="stack-layer base" />
-        </motion.div>
-      </div>
-
-      <div className="work-mode-grid">
-        {workModes.map(({ title, description, icon: Icon, items }, index) => (
-          <Reveal key={title} delay={index * 0.1}>
-            <article>
-              <Icon />
-              <h3>{title}</h3>
-              <p>{description}</p>
-              <ul>
-                {items.map((item) => (
-                  <li key={item}>
-                    <CheckCircle2 />
-                    {item}
-                  </li>
-                ))}
-              </ul>
-              <a href="#contato">
-                Conversar sobre isso <ArrowRight />
-              </a>
-            </article>
-          </Reveal>
-        ))}
       </div>
     </section>
   );
 }
 
 function ProcessSection() {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const [activeSteps, setActiveSteps] = useState(0);
+  const reduceMotion = useReducedMotion();
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    let frame = 0;
+    const update = () => {
+      const bounds = track.getBoundingClientRect();
+      const progress = reduceMotion
+        ? 1
+        : Math.min(Math.max((window.innerHeight * 0.78 - bounds.top) / (bounds.height * 0.9), 0), 1);
+      track.style.setProperty("--process-progress", String(progress));
+      setActiveSteps(Math.min(5, Math.floor(progress * 5 + 0.6)));
+      frame = 0;
+    };
+    const onScroll = () => {
+      if (!frame) frame = requestAnimationFrame(update);
+    };
+    update();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, [reduceMotion]);
+
   return (
     <section id="processo" className="process-section">
-      <Reveal direction="left">
-        <SectionHeading
-          eyebrow="Processo"
-          title="Um caminho simples para decisões melhores."
-          align="center"
-        >
-          A estrutura fica leve para o cliente porque as decisões são organizadas
-          antes, durante e depois do desenvolvimento.
-        </SectionHeading>
-      </Reveal>
-      <Reveal className="timeline" direction="scale" delay={0.08} duration={0.72}>
-        {processSteps.map((step, index) => (
-          <article key={step.title}>
-            <span>{step.number}</span>
-            <i aria-hidden="true" />
-            <h3>{step.title}</h3>
-            <p>{step.description}</p>
-            {index < processSteps.length - 1 && <b aria-hidden="true" />}
-          </article>
-        ))}
-      </Reveal>
+      <div className="section-wrap">
+        <Reveal>
+          <SectionHeading eyebrow="Processo" title="Um caminho simples para decisões melhores" />
+        </Reveal>
+        <div ref={trackRef} className="process-track">
+          <div className="process-line" aria-hidden="true"><i /></div>
+          {processSteps.map((step, index) => (
+            <article key={step.title} className={`process-step ${index < activeSteps ? "active" : ""}`}>
+              <span>{index + 1}</span>
+              <h3>{step.title}</h3>
+              <p>{step.description}</p>
+            </article>
+          ))}
+        </div>
+      </div>
     </section>
   );
 }
 
-function TechSection() {
+function AboutSection() {
   return (
-    <section className="tech-section">
-      <Reveal direction="left">
-        <span className="eyebrow">Base técnica</span>
-        <h2>A tecnologia aparece como sustentação, não como fantasia.</h2>
-      </Reveal>
-      <Reveal className="tech-list" direction="scale" delay={0.06}>
-        {techs.map((tech) => (
-          <span key={tech}>{tech}</span>
-        ))}
-      </Reveal>
+    <section id="sobre" className="about-section">
+      <div className="section-wrap about-layout">
+        <Reveal className="about-copy" direction="left">
+          <h2>Pequena o suficiente para cuidar de perto, técnica o bastante para construir grande.</h2>
+          <div className="strength-grid">
+            {strengths.map(([title, description]) => (
+              <article key={title}>
+                <Check aria-hidden="true" />
+                <strong>{title}</strong>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
+        </Reveal>
+        <Reveal className="founder-card" direction="right" delay={0.08}>
+          <div className="founder-avatar" aria-hidden="true">AA</div>
+          <div className="founder-copy">
+            <h3>Alessandro Araujo, fundador</h3>
+            <p>
+              Eu uno visão de negócio, design e desenvolvimento para criar soluções digitais que
+              façam sentido para quem compra, para quem usa e para quem precisa manter tudo rodando.
+            </p>
+            <div className="tech-list">
+              {technologies.map((technology) => <b key={technology}>{technology}</b>)}
+            </div>
+            <Link className="founder-story-link" href="/minha-historia">Conheça minha história <ArrowRight aria-hidden="true" /></Link>
+          </div>
+        </Reveal>
+      </div>
     </section>
   );
 }
 
 function ContactSection() {
-  const [service, setService] = useState(quoteServices[0].label);
+  const [service, setService] =
+    useState<(typeof quoteServices)[number]["label"]>(quoteServices[0].label);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
 
@@ -1119,86 +959,79 @@ function ContactSection() {
       "Olá, Alessandro! Vim pelo site da AL Tech.",
       "",
       `Tenho interesse em: ${service}`,
-      "",
       `Meu nome é: ${name.trim() || "Não informado"}`,
       "",
       "Sobre o projeto:",
       description.trim() || "Quero conversar para entender o melhor caminho.",
-      "",
-      "Podemos conversar sobre o projeto?",
     ].join("\n");
-
     return `${WHATSAPP_URL}?text=${encodeURIComponent(message)}`;
   }, [description, name, service]);
 
   return (
     <section id="contato" className="contact-section">
-      <Reveal className="contact-copy" direction="left">
-        <span className="eyebrow">Vamos conversar?</span>
-        <h2>
-          Conte o momento do seu negócio. A gente transforma isso em direção.
-        </h2>
-        <p>
-          A primeira conversa serve para entender o objetivo, organizar prioridades
-          e indicar o melhor caminho: site, sistema, dashboard, automação ou evolução
-          de algo que já existe.
-        </p>
-        <div className="contact-links">
-          <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">
-            <Phone /> {WHATSAPP_DISPLAY}
-          </a>
-          <a href="https://www.instagram.com/altech.dev/" target="_blank" rel="noreferrer">
-            <AtSign /> @altech.dev
-          </a>
-          <a href="mailto:contato.altechdev@gmail.com">
-            <Mail /> contato.altechdev@gmail.com
-          </a>
-          <span>
-            <Clock3 /> Seg - Sex
-          </span>
-        </div>
-      </Reveal>
+      <div className="section-wrap contact-layout">
+        <Reveal className="contact-copy">
+          <h2>Conte o momento do seu negócio. A gente transforma isso em direção.</h2>
+          <p>
+            A primeira conversa serve para entender o objetivo e indicar o melhor caminho:
+            site, sistema, dashboard, automação ou evolução de algo que você já tem.
+          </p>
+          <div className="contact-actions">
+            <a className="button button-primary" href={WHATSAPP_URL} target="_blank" rel="noreferrer" onPointerMove={onMagneticMove} onPointerLeave={onMagneticLeave}>
+              Chamar no WhatsApp <ArrowRight />
+            </a>
+            <a className="button button-ghost" href="https://www.instagram.com/altech.dev/" target="_blank" rel="noreferrer" onPointerMove={onMagneticMove} onPointerLeave={onMagneticLeave}>
+              @altech.dev no Instagram
+            </a>
+          </div>
+          <small>{WHATSAPP_DISPLAY} · Seg a Sex</small>
+        </Reveal>
 
-      <Reveal className="contact-panel" direction="right" delay={0.08}>
-        <div className="solution-picker">
+        <details className="contact-details">
+        <summary>Detalhar meu projeto</summary>
+        <div className="contact-panel">
           <span>Qual solução você precisa?</span>
-          <div>
+          <div className="solution-picker" role="group" aria-label="Tipo de solução">
             {quoteServices.map(({ label, icon: Icon }) => (
               <button
                 key={label}
                 type="button"
                 className={service === label ? "selected" : ""}
                 onClick={() => setService(label)}
+                aria-pressed={service === label}
               >
-                <Icon />
-                <strong>{label}</strong>
-                {service === label && <Check />}
+                <Icon aria-hidden="true" />
+                {label}
               </button>
             ))}
           </div>
-        </div>
-        <div className="contact-fields">
           <label>
             Como podemos chamar você?
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Seu nome"
-            />
+            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="Seu nome" maxLength={80} />
           </label>
           <label>
-            Sobre o que é seu projeto?
+            Conte um pouco sobre o projeto
             <textarea
               value={description}
               onChange={(event) => setDescription(event.target.value)}
-              placeholder="Ex: quero um sistema com login, clientes, relatórios e automações..."
+              placeholder="Objetivo, ideia ou problema que precisa resolver..."
+              maxLength={1200}
             />
           </label>
+          <a className="button button-primary contact-submit" href={whatsappHref} target="_blank" rel="noreferrer">
+            Iniciar conversa <ArrowRight />
+          </a>
+          <div className="contact-links">
+            <a href={WHATSAPP_URL} target="_blank" rel="noreferrer"><Phone /> {WHATSAPP_DISPLAY}</a>
+            <a href="https://www.instagram.com/altech.dev/" target="_blank" rel="noreferrer"><AtSign /> @altech.dev</a>
+            <a href={CONTACT_EMAIL_URL} aria-label={`Enviar e-mail para ${CONTACT_EMAIL}`}>
+              <Mail /> <span>{CONTACT_EMAIL_USER}<span aria-hidden="true">@</span>{CONTACT_EMAIL_DOMAIN}</span>
+            </a>
+            <span><Clock3 /> Seg a Sex, 09h às 18h</span>
+          </div>
         </div>
-        <a className="primary-button contact-submit" href={whatsappHref} target="_blank" rel="noreferrer">
-          Iniciar conversa <ArrowRight />
-        </a>
-      </Reveal>
+        </details>
+      </div>
     </section>
   );
 }
@@ -1207,70 +1040,81 @@ function ChatDock() {
   const [open, setOpen] = useState(false);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const messagesRef = useRef<HTMLDivElement>(null);
+  const launcherRef = useRef<HTMLButtonElement>(null);
+  const reduceMotion = useReducedMotion();
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "assistant",
-      text: "Olá. Posso te ajudar a entender qual solução combina com o seu projeto.",
-    },
+    { role: "assistant", text: "Olá. Posso ajudar a encontrar o melhor caminho para o seu projeto." },
   ]);
 
+  useEffect(() => {
+    if (!open) return undefined;
+    const frame = requestAnimationFrame(() => inputRef.current?.focus());
+    const close = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        requestAnimationFrame(() => launcherRef.current?.focus());
+      }
+    };
+    window.addEventListener("keydown", close);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("keydown", close);
+    };
+  }, [open]);
+
+  useEffect(() => {
+    const container = messagesRef.current;
+    if (container) container.scrollTop = container.scrollHeight;
+  }, [messages, thinking, open]);
+
   const fallbackAnswer = (question: string) => {
-    const text = question
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase();
-
+    const text = question.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
     if (text.includes("site") || text.includes("landing")) {
-      return "Para site ou landing page, vale começar pelo objetivo: vender, apresentar autoridade, captar contatos ou agendar. A AL Tech pode cuidar da estratégia, visual, copy, SEO e integração com WhatsApp.";
+      return "Para site ou landing page, começamos pelo objetivo: apresentar autoridade, captar contatos ou vender. A AL Tech pode cuidar de estratégia, visual, SEO e integração com WhatsApp.";
     }
-
     if (text.includes("sistema") || text.includes("erp") || text.includes("dashboard")) {
-      return "Para sistemas e dashboards, o primeiro passo é mapear usuários, telas, dados e decisões que precisam ficar mais claras. Depois disso dá para definir uma primeira versão enxuta e evoluir por fases.";
+      return "Para sistemas e dashboards, o primeiro passo é mapear usuários, telas, dados e decisões. A partir disso definimos uma primeira versão objetiva e evoluímos por fases.";
     }
-
-    if (text.includes("preco") || text.includes("valor") || text.includes("orçamento") || text.includes("orcamento")) {
-      return `O investimento depende de escopo, telas, integrações e prazo. Para estimar com mais precisão, chame no WhatsApp ${WHATSAPP_DISPLAY} e conte um pouco do projeto.`;
+    if (text.includes("preco") || text.includes("valor") || text.includes("orcamento")) {
+      return `O investimento depende do escopo, telas, integrações e prazo. Para estimar com precisão, chame no WhatsApp ${WHATSAPP_DISPLAY}.`;
     }
-
     return `Posso orientar entre site, sistema, dashboard, automação, API ou cloud. Para um diagnóstico direto, fale com a AL Tech pelo WhatsApp ${WHATSAPP_DISPLAY}.`;
   };
 
-  const submit = async (event?: FormEvent<HTMLFormElement>) => {
-    event?.preventDefault();
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     const question = input.trim();
     if (!question || thinking) return;
 
-    const nextMessages: ChatMessage[] = [
-      ...messages,
-      { role: "visitor", text: question },
-    ];
+    const nextMessages: ChatMessage[] = [...messages, { role: "visitor", text: question }];
     setMessages(nextMessages);
     setInput("");
     setThinking(true);
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 15000);
 
     try {
       const response = await fetch("/api/albot", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          messages: nextMessages.map((message) => ({
+          messages: nextMessages.slice(-10).map((message) => ({
             role: message.role === "visitor" ? "visitor" : "bot",
             text: message.text,
           })),
-          pageContext: "Visitante navegando pelo site da AL Tech",
+          pageContext: "Visitante navegando pela nova Home da AL Tech",
         }),
+        signal: controller.signal,
       });
+      if (!response.ok) throw new Error("albot_request_failed");
       const payload = (await response.json()) as { reply?: string };
-      setMessages((current) => [
-        ...current,
-        { role: "assistant", text: payload.reply || fallbackAnswer(question) },
-      ]);
+      setMessages((current) => [...current, { role: "assistant", text: payload.reply || fallbackAnswer(question) }]);
     } catch {
-      setMessages((current) => [
-        ...current,
-        { role: "assistant", text: fallbackAnswer(question) },
-      ]);
+      setMessages((current) => [...current, { role: "assistant", text: fallbackAnswer(question) }]);
     } finally {
+      clearTimeout(timeout);
       setThinking(false);
     }
   };
@@ -1283,13 +1127,13 @@ function ChatDock() {
             className="chat-bubble"
             type="button"
             onClick={() => setOpen(true)}
-            initial={{ opacity: 0, y: 16 }}
+            ref={launcherRef}
+            initial={reduceMotion ? false : { opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 10 }}
+            exit={reduceMotion ? undefined : { opacity: 0, y: 10 }}
             aria-label="Abrir atendimento da AL Tech"
           >
-            <MessageCircle />
-            <span>Falar com a AL Tech</span>
+            <MessageCircle /> <span>Falar com a AL Tech</span>
           </motion.button>
         )}
       </AnimatePresence>
@@ -1297,45 +1141,36 @@ function ChatDock() {
         {open && (
           <motion.aside
             className="chat-panel"
-            initial={{ opacity: 0, y: 18 }}
+            initial={reduceMotion ? false : { opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 12 }}
-            aria-label="Atendimento da AL Tech"
+            exit={reduceMotion ? undefined : { opacity: 0, y: 12 }}
+            role="dialog"
+            aria-modal="false"
+            aria-labelledby="chat-title"
           >
             <div className="chat-header">
-              <div>
-                <strong>AL Tech</strong>
-                <span>Atendimento consultivo</span>
-              </div>
-              <button type="button" onClick={() => setOpen(false)} aria-label="Fechar atendimento">
-                <X />
-              </button>
+              <div><strong id="chat-title">ALBot · AL Tech</strong><span>Assistente virtual</span></div>
+              <button type="button" onClick={() => setOpen(false)} aria-label="Fechar atendimento"><X /></button>
             </div>
-            <div className="chat-messages">
+            <div ref={messagesRef} className="chat-messages" role="log" aria-live="polite" aria-busy={thinking}>
               {messages.map((message, index) => (
                 <div key={`${message.role}-${index}`} className={`chat-message ${message.role}`}>
-                  {message.text.split("\n").map((line, lineIndex) => (
-                    <p key={`${index}-${lineIndex}`}>{line}</p>
-                  ))}
+                  <p>{message.text}</p>
                 </div>
               ))}
-              {thinking && (
-                <div className="chat-message assistant muted">
-                  <p>Analisando sua mensagem...</p>
-                </div>
-              )}
+              {thinking && <div className="chat-message assistant muted"><p>Analisando sua mensagem...</p></div>}
             </div>
             <form className="chat-input" onSubmit={submit}>
               <input
+                ref={inputRef}
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 placeholder="Digite sua mensagem..."
                 aria-label="Mensagem para a AL Tech"
                 disabled={thinking}
+                maxLength={1000}
               />
-              <button type="submit" aria-label="Enviar mensagem" disabled={thinking}>
-                <Send />
-              </button>
+              <button type="submit" aria-label="Enviar mensagem" disabled={thinking || !input.trim()}><Send /></button>
             </form>
           </motion.aside>
         )}
@@ -1347,31 +1182,10 @@ function ChatDock() {
 function Footer() {
   return (
     <footer className="site-footer">
-      <div>
-        <Logo />
-        <p>
-          Sites, sistemas e produtos digitais feitos com estratégia, design e
-          engenharia para negócios que precisam crescer com estrutura.
-        </p>
+      <div className="section-wrap footer-layout">
+        <span>© 2026 AL Tech. Todos os direitos reservados.</span>
+        <span>Rio de Janeiro, Brasil · Projetos em todo o Brasil</span>
       </div>
-      <div>
-        <strong>Navegação</strong>
-        {navItems.map(({ label, href }) => (
-          <a key={label} href={href}>{label}</a>
-        ))}
-      </div>
-      <div>
-        <strong>Contato</strong>
-        <a href={WHATSAPP_URL} target="_blank" rel="noreferrer">WhatsApp</a>
-        <a href="https://www.instagram.com/altech.dev/" target="_blank" rel="noreferrer">Instagram</a>
-        <a href="mailto:contato.altechdev@gmail.com">E-mail</a>
-      </div>
-      <div>
-        <strong>Atendimento</strong>
-        <span>Rio de Janeiro - Brasil</span>
-        <span>Projetos em todo o Brasil</span>
-      </div>
-      <small>© 2026 AL Tech. Todos os direitos reservados.</small>
     </footer>
   );
 }
@@ -1384,23 +1198,17 @@ export function HomeExperience() {
       name: "AL Tech",
       url: "https://altechweb.com.br",
       logo: "https://altechweb.com.br/favicon.svg",
-      description:
-        "Desenvolvimento de sites, sistemas, plataformas web, dashboards, automações e infraestrutura cloud.",
+      description: "Desenvolvimento de sites, sistemas, plataformas, dashboards e automações.",
       sameAs: ["https://www.instagram.com/altech.dev/"],
       founder: {
         "@type": "Person",
         name: "Alessandro Araujo",
         jobTitle: "Fundador e desenvolvedor",
-        image: "https://altechweb.com.br/alessandro-araujo.jpg",
       },
       areaServed: "Brasil",
       makesOffer: services.map((service) => ({
         "@type": "Offer",
-        itemOffered: {
-          "@type": "Service",
-          name: service.title,
-          description: service.description,
-        },
+        itemOffered: { "@type": "Service", name: service.title, description: service.description },
       })),
     }),
     [],
@@ -1409,20 +1217,14 @@ export function HomeExperience() {
   return (
     <main className="site-shell">
       <PWARegister />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       <Header />
       <HeroSection />
       <TrustStrip />
-      <ProblemSection />
-      <AboutSection />
+      <ProjectShowcase />
       <ServicesSection />
-      <ProjectCarousel />
-      <WorkModesSection />
       <ProcessSection />
-      <TechSection />
+      <AboutSection />
       <ContactSection />
       <Footer />
       <ChatDock />

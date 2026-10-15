@@ -12,7 +12,7 @@ export function NotFoundExperience() {
         <p>
           O endereço pode ter mudado ou ainda não fazer parte do site da AL Tech.
         </p>
-        <Link className="primary-button" href="/">
+        <Link className="button button-primary" href="/">
           <Home /> Voltar para a home <ArrowRight />
         </Link>
       </div>

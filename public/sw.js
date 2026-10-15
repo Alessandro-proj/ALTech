@@ -1,4 +1,4 @@
-const CACHE_NAME = "al-tech-command-v2";
+const CACHE_NAME = "al-tech-command-v4";
 const CORE_ASSETS = ["/", "/favicon.svg", "/manifest.webmanifest", "/og.png"];
 
 self.addEventListener("install", (event) => {
@@ -22,15 +22,54 @@ self.addEventListener("activate", (event) => {
 });
 
 self.addEventListener("fetch", (event) => {
-  if (event.request.method !== "GET") return;
+  const request = event.request;
+  if (request.method !== "GET") return;
+
+  const url = new URL(request.url);
+  if (url.origin !== self.location.origin) return;
+
+  if (request.mode === "navigate") {
+    event.respondWith(
+      fetch(request)
+        .then(async (response) => {
+          if (response.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            await cache.put(request, response.clone());
+          }
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(request);
+          return (
+            cached ??
+            (await caches.match("/")) ??
+            new Response("Sem conexão no momento.", {
+              status: 503,
+              headers: { "Content-Type": "text/plain; charset=utf-8" },
+            })
+          );
+        }),
+    );
+    return;
+  }
+
+  const isStaticAsset =
+    url.pathname.startsWith("/_next/static/") ||
+    CORE_ASSETS.includes(url.pathname) ||
+    ["font", "image", "script", "style"].includes(request.destination);
+
+  if (!isStaticAsset) return;
 
   event.respondWith(
-    fetch(event.request)
-      .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return response;
-      })
-      .catch(() => caches.match(event.request)),
+    caches.match(request).then(async (cached) => {
+      if (cached) return cached;
+
+      const response = await fetch(request);
+      if (response.ok) {
+        const cache = await caches.open(CACHE_NAME);
+        await cache.put(request, response.clone());
+      }
+      return response;
+    }),
   );
 });

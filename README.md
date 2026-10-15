@@ -63,6 +63,6 @@ Sem `OPENAI_API_KEY`, o ALBot usa respostas locais de fallback.
 
 ## Contato
 
-- WhatsApp: +55 21 97271-4119
+- WhatsApp: +55 21 97126-6237
 - Instagram: https://www.instagram.com/altech.dev/
 - E-mail: contato.altechdev@gmail.com
